@@ -129,12 +129,12 @@ function AnswerLetterV4Copy({
   };
 
   // Функция-обертка для кнопок, чтобы закрыть редактор перед действием
-const handleActionWithEditorClose = (action: () => void) => {
-  handleVisibleShowEditor(false); // закрываем редактор
-  setTimeout(() => {
-    action(); // выполняем основное действие
-      }, 50); // даем время React безопасно размонтировать редактор
-};
+  const handleActionWithEditorClose = (action: () => void) => {
+    handleVisibleShowEditor(false); // закрываем редактор
+    setTimeout(() => {
+      action(); // выполняем основное действие
+    }, 50); // даем время React безопасно размонтировать редактор
+  };
 
   const [signAnswerModal, setSignAnswerModal] = useState(false);
   const [signAnswerComment, setSignAnswerComment] = useState("");
@@ -181,19 +181,18 @@ const handleActionWithEditorClose = (action: () => void) => {
       refetchData();
       setSignAnswerModal(false);
       toast.success("Успешно подписан");
-      setModalState(false)
+      setModalState(false);
     });
   };
-
 
   const handleDoneLetter = async (values: any) => {
     await doneLetter(values).then(() => {
       refetchData();
       setDoneOpen(false);
-  
+
       setTimeout(() => {
         window.location.reload();
-      }, 500); 
+      }, 500);
     });
   };
 
@@ -768,6 +767,8 @@ const handleActionWithEditorClose = (action: () => void) => {
           {!initialValues?.transition?.buttonSettings?.btn_set_sign?.hide ? (
             <Button
               onClick={() => {
+                handleActionWithEditorClose(null);
+
                 if (mainDTO) {
                   getAnswerDataForSignIncoming(mainDTO?.id).then(({ data }) => {
                     if (data && docInfo) {
@@ -791,8 +792,8 @@ const handleActionWithEditorClose = (action: () => void) => {
 
           {!initialValues?.transition?.buttonSettings?.btn_sign?.hide ? (
             <Button
-            onClick={() => handleActionWithEditorClose(signAnswerClick)}
-            disabled={
+              onClick={() => handleActionWithEditorClose(signAnswerClick)}
+              disabled={
                 initialValues?.transition?.buttonSettings?.btn_sign?.readOnly
               }
               type="button"
@@ -849,7 +850,9 @@ const handleActionWithEditorClose = (action: () => void) => {
               color="error"
               type="button"
               variant="contained"
-              onClick={() => handleActionWithEditorClose(() => setRejectModalOpen(true))}
+              onClick={() =>
+                handleActionWithEditorClose(() => setRejectModalOpen(true))
+              }
               disabled={
                 initialValues?.transition?.buttonSettings?.btn_reject?.readOnly
               }
@@ -969,13 +972,13 @@ const handleActionWithEditorClose = (action: () => void) => {
             })}
           </div>
 
-          <Button
+          {/* <Button
             onClick={handleCheckFinalPdf}
             type="button"
             variant="contained"
           >
             Проверить конечный документ
-          </Button>
+          </Button> */}
           {!initialValues?.transition?.buttonSettings?.btn_sendToApprove
             ?.hide ? (
             <Button
@@ -983,8 +986,9 @@ const handleActionWithEditorClose = (action: () => void) => {
                 initialValues?.transition?.buttonSettings?.btn_sendToApprove
                   ?.readOnly
               }
-              onClick={() => handleActionWithEditorClose(() => setSendToApproveOpen(true))}
-
+              onClick={() =>
+                handleActionWithEditorClose(() => setSendToApproveOpen(true))
+              }
               type="button"
               variant="contained"
             >
@@ -1000,8 +1004,9 @@ const handleActionWithEditorClose = (action: () => void) => {
                 initialValues?.transition?.buttonSettings?.btn_done?.readOnly
               }
               fullWidth
-              onClick={() => handleActionWithEditorClose(() => setDoneOpen(true))}
-
+              onClick={() =>
+                handleActionWithEditorClose(() => setDoneOpen(true))
+              }
               type="button"
               variant="contained"
             >
@@ -1131,10 +1136,12 @@ const handleActionWithEditorClose = (action: () => void) => {
           />
 
           <Button
-            onClick={    () => handleApprove({
-              incomingId: initialValues?.incomingId,
-              comment: signAnswerComment,
-            })  }
+            onClick={() =>
+              handleApprove({
+                incomingId: initialValues?.incomingId,
+                comment: signAnswerComment,
+              })
+            }
             sx={{ minWidth: 136 }}
             variant="contained"
             type="button"

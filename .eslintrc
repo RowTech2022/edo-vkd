@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "env": {
+      "browser": true,
+      "es2020": true,
+  },
+  "ignorePatterns": ["dist", ".eslintrc.cjs"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["react-refresh", "unused-imports", "import"],
+  "rules": {
+      "@typescript-eslint/no-duplicate-enum-values": "off",
+      "no-unused-vars": "off",
+      "no-unused-variable": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": "off",
+    //   "unused-imports/no-unused-vars": [
+    //       "warn",
+    //       {
+    //           "vars": "off",
+    //           "varsIgnorePattern": "^_",
+    //           "args": "after-used",
+    //           "argsIgnorePattern": "^_",
+    //       },
+    //   ],
+      "@typescript-eslint/triple-slash-reference": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      // "no-duplicate-imports": "error",
+      "import/no-duplicates": ["error", {"prefer-inline": true}]
+  },
+}

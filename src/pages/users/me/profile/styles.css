@@ -1,0 +1,17 @@
+.event-list-container {
+  overflow: hidden;
+  transition: height 0.9s ease-out;
+  padding: 0 20px;
+}
+
+.event-list-container.expanded {
+  height: auto; 
+}
+
+button.profile-btn {
+  transition: background-color 0.9s ease;
+}
+
+button.profile-btn:hover {
+  background-color: #3f51b5;
+}

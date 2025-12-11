@@ -1,0 +1,87 @@
+<html>
+<head>
+    <title>iisnode logs</title>
+    <style type="text/css">
+        body
+        {
+            font-family: "Trebuchet MS" , Arial, Helvetica, sans-serif;
+        }
+        table
+        {
+            border-collapse: collapse;
+        }
+        td, th
+        {
+            border: 1px solid lightgray;
+            padding: 3px 7px 2px 7px;
+        }
+        th
+        {
+            text-align: left;
+            padding-top: 5px;
+            padding-bottom: 4px;
+            background-color: Gray;
+            color: #ffffff;
+        }
+        td.stderr
+        {
+            color: Red;
+        }
+    </style>
+</head>
+<body>
+    <table id="logFilesTable">
+        <tr>
+            <th>
+                Computer name
+            </th>
+            <th>
+                PID
+            </th>
+            <th>
+                Type
+            </th>
+            <th>
+                Created
+            </th>
+            <th>
+                Link
+            </th>
+        </tr>
+    </table>
+    <p id="lastUpdated"></p>
+    <script type="text/javascript">
+
+        // this is replaced with actual data at runtime by code in interceptor.js
+        var logFiles = [{"file":"SR-VKD-EDO-01-12220-stderr-1764369061667.txt","computername":"SR-VKD-EDO-01","pid":12220,"type":"stderr","created":1764369061667},{"file":"SR-VKD-EDO-01-12732-stderr-1764369088414.txt","computername":"SR-VKD-EDO-01","pid":12732,"type":"stderr","created":1764369088414},{"file":"SR-VKD-EDO-01-12788-stderr-1764369089892.txt","computername":"SR-VKD-EDO-01","pid":12788,"type":"stderr","created":1764369089892},{"file":"SR-VKD-EDO-01-12844-stderr-1764369091286.txt","computername":"SR-VKD-EDO-01","pid":12844,"type":"stderr","created":1764369091286},{"file":"SR-VKD-EDO-01-14488-stderr-1764370061752.txt","computername":"SR-VKD-EDO-01","pid":14488,"type":"stderr","created":1764370061752},{"file":"SR-VKD-EDO-01-14488-stdout-1764370061751.txt","computername":"SR-VKD-EDO-01","pid":14488,"type":"stdout","created":1764370061751},{"file":"SR-VKD-EDO-01-1700-stderr-1764369065093.txt","computername":"SR-VKD-EDO-01","pid":1700,"type":"stderr","created":1764369065093},{"file":"SR-VKD-EDO-01-7316-stderr-1764369476367.txt","computername":"SR-VKD-EDO-01","pid":7316,"type":"stderr","created":1764369476367},{"file":"SR-VKD-EDO-01-7316-stdout-1764369476366.txt","computername":"SR-VKD-EDO-01","pid":7316,"type":"stdout","created":1764369476366}];
+        var lastUpdated = 1764370063157;
+        var date = new Date();
+
+        date.setTime(lastUpdated);
+        document.getElementById('lastUpdated').innerHTML = 'Index was last updated ' + date;
+
+        logFiles.sort(function (a, b) {
+            return b.created - a.created;
+        });
+
+        var logFilesTable = document.getElementById("logFilesTable");
+        for (var i = 0; i < logFiles.length; i++) {
+            var logFile = logFiles[i];
+            date.setTime(logFile.created);
+            var row = logFilesTable.insertRow(-1);
+            var computerNameCell = row.insertCell(0);
+            var pidCell = row.insertCell(1);
+            var typeCell = row.insertCell(2);
+            var dateCell = row.insertCell(3);
+            var logCell = row.insertCell(4);
+            computerNameCell.innerHTML = logFile.computername;
+            pidCell.innerHTML = logFile.pid.toString();
+            typeCell.innerHTML = logFile.type;
+            typeCell.setAttribute('class', logFile.type);
+            dateCell.innerHTML = date.toString();
+            logCell.innerHTML = '<a href="' + logFile.file + '">log</a>';
+        };
+
+    </script>
+</body>
+</html>

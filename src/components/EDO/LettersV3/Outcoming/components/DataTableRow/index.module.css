@@ -1,0 +1,26 @@
+.incoming_row > div:not(:global .new) > div:first-child > div {
+    display: none;
+  }
+  
+  .incoming_row:hover > div:not(:global .new) > div:first-child > div {
+    background-color: #95a3b8 !important;
+    display: block;
+  }
+  
+  .incoming_row:hover > div:not(:global .new) > div:first-child > div:hover {
+    background-color: #607D8B !important;
+  }
+  
+  .incoming_row:hover > div:global.new > div:first-child > div:hover {
+    background-color: #95a3b8 !important;
+  }
+  
+  .incoming_row > div > div:first-child > div:hover {
+    width: 10px !important;
+  }
+  
+  .draggable {
+    color: white;
+    background-color: #607D8B;
+  }
+  

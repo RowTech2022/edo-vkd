@@ -1,0 +1,4 @@
+> Ready on <http://localhost>:\\.\pipe\3233b54d-b337-4a21-bac7-2d0db9339aa8
+ GET /_next/webpack-hmr 500 in 3.6s (compile: 3.4s, render: 191ms)
+ GET / 500 in 50ms (compile: 27ms, render: 23ms)
+ GET / 500 in 48ms (compile: 34ms, render: 14ms)

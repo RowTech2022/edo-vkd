@@ -1,0 +1,38 @@
+.modal-wrapper {
+  @apply tw-fixed tw-top-0 tw-left-0 tw-w-full tw-h-full tw-bg-periwinkle tw-bg-opacity-50 tw-flex tw-items-center tw-justify-center tw-z-40;
+}
+
+.modal-container {
+  @apply tw-max-w-full md:tw-max-w-3xl tw-w-max tw-h-full md:tw-h-max tw-bg-white md:tw-rounded-2xl tw-shadow-2xl;
+}
+
+.modal {
+  @apply tw-relative xl:tw-px-10 xl:tw-py-10 lg:tw-px-12 lg:tw-py-10 md:tw-px-10 md:tw-py-8 tw-px-6 tw-py-4;
+
+  &__close-btn {
+    @apply tw-absolute tw-top-3.5 tw-right-4;
+  }
+}
+
+/* fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* scalle in transition */
+.scale-in-enter,
+.scale-in-leave-to {
+  transform: scale(0.88);
+  opacity: 0;
+}
+
+.scale-in-enter-active,
+.scale-in-leave-active {
+  transition: transform 0.3s, opacity 0.5s;
+}

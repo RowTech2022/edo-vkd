@@ -1,0 +1,42 @@
+.hide-scrollbar {
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.overlay {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 3rem;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.05));
+  z-index: 999;
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  padding: 5px 12px;
+  color: #1976d2;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.3s ease, background-color 0.3s ease;
+
+  &:hover {
+    opacity: 0.8;
+    background-color: #1976d218;
+  }
+}
+
+.active {
+  &,
+  &:hover {
+    background: #1976d2;
+    color: #fff;
+  }
+}

@@ -1,0 +1,5 @@
+> Ready on <http://localhost>:\\.\pipe\f388eae9-e2ba-4169-ab72-7ddb15373857
+ ○ Compiling /_not-found/page ...
+ GET / 500 in 11.8s (compile: 11.5s, render: 282ms)
+ GET / 500 in 45ms (compile: 30ms, render: 14ms)
+ GET / 500 in 48ms (compile: 36ms, render: 13ms)

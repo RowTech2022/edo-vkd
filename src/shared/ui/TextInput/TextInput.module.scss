@@ -1,0 +1,19 @@
+.input-box {
+  @apply tw-border tw-border-[#607D8B]/50 tw-rounded-md tw-overflow-hidden;
+}
+
+.input-box--incorrect {
+  @apply tw-border-redribbon;
+}
+
+.input-box--disabled {
+  @apply tw-bg-[#00103D]/[0.06] tw-border-[#00103D]/[0.12];
+}
+
+.input {
+  @apply tw-py-3 tw-px-2.5 tw-outline-none tw-w-full autofill:tw-bg-none;
+}
+
+.error-msg {
+  @apply tw-text-redribbon tw-text-sm;
+}

@@ -1,0 +1,74 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": false,
+    "target": "ES2021",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2021",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    /* Linting */
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "." /* Specify the base directory to resolve non-relative module names. */,
+    "paths": {
+      "*": ["*", "*.tsx"],
+      "@root/*": [
+        "./src/*"
+      ],
+      "@modules/*": [
+        "./src/components/modules/*"
+      ],
+      "@ui": [
+        "./src/shared/ui/index"
+      ],
+      "@hooks": [
+        "./src/shared/hooks/index"
+      ],
+      "@shared": [
+        "./src/shared/index"
+      ],
+      "@pages/*": [
+        "./src/pages/*"
+      ],
+      "@components": [
+        "./src/components/index"
+      ],
+      "@configs": [
+        "./src/shared/configs/index.ts"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@icons": [
+        "./src/shared/ui/Icons/index.ts"
+      ],
+      "@utils": [
+        "./src/shared/utils/index.ts"
+      ],
+      "@layouts": [
+        "./src/layouts/index.ts"
+      ],
+    },
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

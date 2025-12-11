@@ -1,0 +1,7 @@
+.flat-button {
+  @apply tw-px-5 tw-py-2.5 tw-text-primary tw-flex tw-gap-3 tw-items-center;
+}
+
+.flat-button:disabled {
+  @apply tw-opacity-50 tw-pointer-events-none tw-select-none;
+}

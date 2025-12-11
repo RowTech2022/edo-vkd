@@ -1,0 +1,226 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap");
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+.mulish {
+  font-family: "Mulish", sans-serif;
+}
+
+.linear {
+  background-image: linear-gradient(
+    90deg,
+    rgb(243, 231, 233) 0%,
+    rgb(227, 238, 255) 99%,
+    rgb(227, 238, 255) 100%
+  );
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.wrapper-tab:hover > p,
+.wrapper-tab:hover > .colorIcon,
+.wrapper-chat:hover .user-info .text > p {
+  color: #fff;
+  transition: all 0.1s;
+}
+
+.tab-visa-select:hover {
+  background-color: #007cd2;
+  color: #fff;
+}
+
+.documents::after {
+  content: "";
+  position: absolute;
+  background: #00000020;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: none;
+}
+
+.documents:hover::after {
+  display: block;
+  transition: all 0.1s;
+}
+
+.icon-effects:hover {
+  color: #ffffffa2;
+  transition: all 0.1s;
+}
+
+.wrapper-chat:hover .more-vert {
+  color: #f9f9f9;
+}
+
+/* SCROLLBAR */
+/* Let's get this party started */
+.category-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Track */
+.category-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border: 4px solid transparent;
+  background-clip: content-box; /* THIS IS IMPORTANT */
+}
+
+/* Handle */
+.category-scrollbar::-webkit-scrollbar-thumb {
+  background: #dfe4e9;
+  border-radius: 10px;
+}
+
+.category-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #abaeb2;
+  color: #000000;
+}
+
+.structure-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+
+/* Track */
+.structure-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border: 10px solid transparent;
+  background-clip: content-box; /* THIS IS IMPORTANT */
+}
+
+/* Handle */
+.structure-scrollbar::-webkit-scrollbar-thumb {
+  background: #dfe4e9;
+  border-radius: 10px;
+}
+
+.structure-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #abaeb2;
+  color: #000000;
+}
+
+.sub-chat {
+  animation-name: subChatMove;
+  animation-duration: 300ms;
+  animation-fill-mode: forwards;
+}
+
+.sub-chat-reverse {
+  animation-name: subChatMoveReverse;
+  animation-duration: 300ms;
+  animation-fill-mode: forwards;
+}
+
+.close-sub-chat {
+  opacity: 0;
+  animation-name: subChatClose;
+  animation-duration: 500ms;
+  animation-delay: 300ms;
+  animation-fill-mode: forwards;
+}
+
+@keyframes subChatMove {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 80%;
+  }
+}
+
+@keyframes subChatClose {
+  from {
+    opacity: 0;
+    width: 0%;
+  }
+  to {
+    opacity: 1;
+    width: 100%;
+  }
+}
+
+@keyframes subChatMoveReverse {
+  from {
+    width: 80%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.aside-left-conclusion {
+  background: linear-gradient(to bottom, #f1f1f1, #d6d7db);
+}
+
+.react-quill-editor .ql-container {
+  border: none !important; /* Important to override Quill's styles */
+}
+
+.ql-toolbar {
+  border-left: none !important; /* Убираем границу у всей панели управления */
+  border-right: none !important; /* Убираем границу у всей панели управления */
+}
+
+.conclusion-animation {
+  animation-name: conclusion;
+  animation-duration: 300ms;
+}
+
+@keyframes conclusion {
+  from {
+    left: 100%;
+  }
+  to {
+    left: 0;
+  }
+}
+
+.conclusion-live-chat-animation {
+  animation-name: conclusionLiveChat;
+  animation-duration: 300ms;
+}
+
+@keyframes conclusionLiveChat {
+  from {
+    bottom: -50%;
+  }
+  to {
+    bottom: 0;
+  }
+}
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+
+  /* Center slide text vertically */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swiper-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  color: #8a8a8a;
+}

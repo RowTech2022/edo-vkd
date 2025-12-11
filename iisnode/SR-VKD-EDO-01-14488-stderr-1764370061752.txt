@@ -1,0 +1,15 @@
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+(node:14488) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames
+ ⨯ TypeError: maybeGlobalAsyncLocalStorage.snapshot is not a function
+    at ignore-listed frames

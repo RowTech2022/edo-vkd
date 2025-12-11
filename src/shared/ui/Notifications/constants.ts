@@ -1,0 +1,53 @@
+export enum DocumentType {
+  Undefound = 0,
+  Access_Tfmis = 1,
+  Access_Mf = 2,
+  Card_Signatura = 3,
+  Accountant_Responsibility = 4,
+  Contract = 5,
+  Invoice = 6,
+  Proxy = 7,
+  Waybill = 8,
+  Act = 19,
+  Travel_Expenses = 9,
+  Activity = 11,
+  OutcomingLatter = 12,
+  IncomingLatter = 13,
+  IncommingLatterNew = 14,
+  InternallLatter = 18,
+  Execute = 15,
+  UserPicture = 16,
+  UserFiles = 17,
+  Request = 20,
+  LettersV3 = 21,
+  FinanceReport = 22,
+}
+
+export const documentRoutes: any = {
+  [DocumentType.Undefound]: '',
+  [DocumentType.Access_Tfmis]:
+    '/modules/documents/tfmis-access-applications/show/',
+  [DocumentType.Access_Mf]: '/modules/documents/mf-access-forms/show/',
+  [DocumentType.Card_Signatura]:
+    '/modules/documents/signatures-sample-card/show/',
+  [DocumentType.Accountant_Responsibility]:
+    '/modules/documents/chief-accountant-job-responsibilities/show/',
+  [DocumentType.Contract]: '/modules/source-documents/contracts/show/',
+  [DocumentType.Invoice]: '/modules/source-documents/invoices/show/',
+  [DocumentType.Proxy]: '/modules/source-documents/proxies/show/',
+  [DocumentType.Waybill]: '/modules/source-documents/waybills/show/',
+  [DocumentType.Act]: '/modules/source-documents/act/show/',
+  [DocumentType.Activity]: '/modules/source-documents/act/show/',
+  [DocumentType.Travel_Expenses]:
+    '/modules/source-documents/travel-expenses/show/',
+  [DocumentType.IncomingLatter]: '/modules/latters/corIncoming/show/',
+  [DocumentType.OutcomingLatter]: '/modules/latters/corOutcoming/show/',
+  [DocumentType.IncommingLatterNew]: '/modules/latters/corIncoming/show/',
+  [DocumentType.InternallLatter]: '/modules/latters/incomming/show/',
+  [DocumentType.Execute]: '/modules/latters/corExecution/show/',
+  [DocumentType.UserPicture]: '',
+  [DocumentType.UserFiles]: '',
+  [DocumentType.Request]: '',
+  [DocumentType.LettersV3]: '/modules/latters-v3/incomming/show/',
+  [DocumentType.FinanceReport]: '/modules/finance-report/incomming/show/',
+}

@@ -1,0 +1,16 @@
+.profile-table {
+  @apply tw-w-full;
+
+  thead {
+    @apply tw-font-semibold tw-text-left;
+  }
+
+  th {
+    @apply tw-border-b tw-border-b-primary;
+  }
+
+  td,
+  th {
+    @apply tw-py-4 tw-px-6;
+  }
+}

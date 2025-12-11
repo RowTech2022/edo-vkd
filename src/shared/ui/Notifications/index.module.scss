@@ -1,0 +1,44 @@
+.notifications-container {
+  @apply tw-absolute tw-bg-white tw-rounded-lg
+          tw-z-[9999] tw-top-[110%] tw-right-[0]
+          tw-min-w-[400px] tw-max-h-[500px]
+          tw-origin-top-right
+          tw-transition-[transform,opacity] tw-duration-[.3s];
+}
+
+.list-scrollable {
+  max-height: 350px;
+  max-width: 450px;
+  overflow-y: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.hidden {
+  @apply tw-invisible tw-opacity-0 tw-scale-75;
+}
+
+.visible {
+  @apply tw-visible tw-opacity-100 tw-scale-100;
+}
+
+
+@keyframes scalePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.badgePulse {
+  animation: scalePulse 3s ease-in-out infinite;
+}

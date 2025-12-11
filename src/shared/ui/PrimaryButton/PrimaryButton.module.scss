@@ -1,0 +1,10 @@
+.primary-button {
+  @apply tw-px-5 tw-py-2.5 tw-bg-primary tw-text-white tw-rounded-md tw-overflow-hidden tw-flex tw-gap-3 tw-items-center tw-justify-center;
+}
+
+.primary-button:disabled {
+  @apply tw-bg-gray-300 tw-text-gray-500 tw-cursor-not-allowed;
+}
+.outlined {
+  @apply tw-bg-transparent tw-border tw-border-primary tw-text-primary;
+}

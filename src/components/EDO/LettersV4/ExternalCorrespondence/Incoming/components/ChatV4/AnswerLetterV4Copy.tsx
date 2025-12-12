@@ -768,11 +768,11 @@ function AnswerLetterV4Copy({
             <Button
               onClick={() => {
                 handleActionWithEditorClose(null);
-
+                setModalState(false);
                 if (mainDTO) {
                   getAnswerDataForSignIncoming(mainDTO?.id).then(({ data }) => {
                     if (data && docInfo) {
-                      refetchData?.();
+                      refetchAnswer();
                     }
                   });
                 }

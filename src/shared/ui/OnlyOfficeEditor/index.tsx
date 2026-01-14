@@ -92,6 +92,14 @@ export const OnlyOfficeEditor: FC<IProps> = ({
           events_onAppReady={(instance: any) => {
             console.log("Instance: ", instance, instance?.editor);
             // editorRef.current = instance;
+            if (editorRef) {
+              editorRef.current = {
+                ...instance,
+                print: () => {
+                  instance.downloadAs();
+                },
+              };
+            }
           }}
           onLoadComponentError={(code, desc) =>
             console.error("Component load error:", code, desc)

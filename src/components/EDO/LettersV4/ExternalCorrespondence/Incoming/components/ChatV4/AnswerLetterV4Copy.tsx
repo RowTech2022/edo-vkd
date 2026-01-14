@@ -360,10 +360,48 @@ function AnswerLetterV4Copy({
     }
   };
 
-  const editorRef = useRef<{ print: () => void }>(null);
+  // const editorRef = useRef<{ print: () => void }>(null);
+
+  const printPdfByUrl = async (url: string) => {
+    if (!url) {
+      toast.warning("URL документа не найден");
+      return;
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Ошибка загрузки файла");
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = blobUrl;
+
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      };
+    } catch (err) {
+      console.error(err);
+      toast.error("Не удалось распечатать файл");
+    }
+  };
 
   const handleExternalPrint = () => {
-    editorRef.current?.print();
+    // editorRef.current?.print();
+    if (initialValues?.finalPdfUrl) {
+      printPdfByUrl(initialValues.finalPdfUrl);
+      return;
+    }
+
+    if (officeRef.current && officeRef.current.print) {
+      officeRef.current.print();
+    } else {
+      toast.warning("PDF не сформирован");
+    }
   };
 
   const generateRandomFileName = (file) => {
@@ -820,33 +858,7 @@ function AnswerLetterV4Copy({
               if (initialValues?.newFormat) {
                 handleExternalPrint();
               } else {
-                if (!url) {
-                  toast.warning("PDF не найден");
-                  return;
-                }
-
-                try {
-                  const response = await fetch(url);
-                  if (!response.ok) throw new Error("Ошибка загрузки PDF");
-
-                  const blob = await response.blob();
-                  const blobUrl = URL.createObjectURL(blob);
-
-                  const iframe = document.createElement("iframe");
-                  iframe.style.display = "none";
-                  iframe.src = blobUrl;
-
-                  document.body.appendChild(iframe);
-
-                  iframe.onload = () => {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                    // НЕ удаляем iframe и blobUrl
-                  };
-                } catch (err) {
-                  console.error(err);
-                  toast.error("Не удалось распечатать PDF");
-                }
+                printPdfByUrl(url);
               }
             }}
           >

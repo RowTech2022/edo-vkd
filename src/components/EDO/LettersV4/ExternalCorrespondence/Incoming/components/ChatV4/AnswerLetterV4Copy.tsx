@@ -487,13 +487,6 @@ function AnswerLetterV4Copy({
 
         setInitialDoc(initialValues?.finalFormUrl);
         setIsPdf(false);
-        setHasPdf(false);
-      } else if (initialValues?.finalPdfUrl && initialValues?.newFormat) {
-        console.log("Set PDF: ", initialValues?.finalPdfUrl);
-        setHasPdf(true);
-
-        setInitialDoc(initialValues?.finalPdfUrl);
-        setIsPdf(true);
       }
 
       if (initialValues?.docInfo) {
@@ -505,13 +498,13 @@ function AnswerLetterV4Copy({
         });
       }
 
-      // if (initialValues?.finalPdfUrl && initialValues?.newFormat) {
-      //   console.log("Set: ", initialValues?.finalPdfUrl);
-      //   setHasPdf(true);
+      if (initialValues?.finalPdfUrl && initialValues?.newFormat) {
+        console.log("Set: ", initialValues?.finalPdfUrl);
+        setHasPdf(true);
 
-      //   setInitialDoc(initialValues?.finalPdfUrl);
-      //   setIsPdf(true);
-      // }
+        setInitialDoc(initialValues?.finalPdfUrl);
+        setIsPdf(true);
+      }
 
       if (initialValues?.attachments) {
         setAddLettersFile(initialValues?.attachments);

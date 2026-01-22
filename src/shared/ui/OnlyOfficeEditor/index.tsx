@@ -1,7 +1,16 @@
-import { FC, MutableRefObject, RefObject, useEffect, useState } from "react";
+import {
+  FC,
+  MutableRefObject,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { DocumentEditor } from "@onlyoffice/document-editor-react";
 import { useFetchUserDetailsQuery } from "../../../services/admin/userProfileApi";
 import { toBase64 } from "../../utils";
+import { OnlyOfficeErrorBoundary } from "./OnlyOfficeErrorBoundary";
 
 interface IProps {
   url: string;
@@ -15,6 +24,7 @@ interface IProps {
 
 const ROW_API_URL = import.meta.env.VITE_ROW_OFFICE_API_BASE_URL;
 const ROW_CALLBACK_API_URL = import.meta.env.VITE_ROW_OFFICE_CALLBACK_API_URL;
+
 export const OnlyOfficeEditor: FC<IProps> = ({
   url,
   fileName,
@@ -27,33 +37,69 @@ export const OnlyOfficeEditor: FC<IProps> = ({
   const { data: details } = useFetchUserDetailsQuery();
 
   const [renderEditor, setRenderEditor] = useState(false);
-  const [instance, setInstance] = useState<any>(null);
   const [config, setConfig] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorIdRef = useRef<string>(`docxEditor_${Date.now()}`);
 
   const isPdf = url?.split("?")[0].endsWith(".pdf");
 
   const callbackUrl = `${ROW_CALLBACK_API_URL}?fileName=${fileName}&fileType=${fileType}&documentId=${documentId}`;
 
+  // Генерируем уникальный ключ для полной пересоздания DOM
+  const editorKey = useMemo(() => {
+    return toBase64(fileName + documentId + updatedAt + Date.now());
+  }, [fileName, documentId, updatedAt]);
+
+  // Очистка DOM при размонтировании - используем try-catch для подавления ошибок
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    return () => {
+      if (container) {
+        try {
+          // Пытаемся безопасно очистить контейнер
+          while (container.firstChild) {
+            try {
+              container.removeChild(container.firstChild);
+            } catch (e) {
+              // Игнорируем ошибки removeChild
+              break;
+            }
+          }
+        } catch (e) {
+          // Игнорируем любые ошибки очистки
+        }
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!details) return;
 
-    // Полностью скрываем редактор
-    setRenderEditor(false);
+    // Генерируем новый ID для редактора при каждом обновлении
+    editorIdRef.current = `docxEditor_${Date.now()}`;
 
-    url = `${url?.slice(
+    // Полностью скрываем редактор и очищаем конфиг
+    setRenderEditor(false);
+    setConfig(null);
+
+    const modifiedUrl = `${url?.slice(
       0,
-      url?.indexOf("?")
+      url?.indexOf("?"),
     )}?fileName=${fileName}&updatedAt=${updatedAt}`;
 
-    console.log("Url: ", { url, key: fileName + documentId + updatedAt });
-    // Задержка, чтобы размонтировать
+    console.log("Url: ", {
+      url: modifiedUrl,
+      key: fileName + documentId + updatedAt,
+    });
+
+    // Задержка, чтобы дать React время размонтировать
     const timer = setTimeout(() => {
-      setConfig({
+      const newConfig = {
         document: {
           fileType: isPdf ? "pdf" : "docx",
           key: toBase64(fileName + documentId + updatedAt),
           title: fileName,
-          url,
+          url: modifiedUrl,
         },
         documentType: "text",
         editorConfig: {
@@ -68,50 +114,45 @@ export const OnlyOfficeEditor: FC<IProps> = ({
             forcesave: !isPdf,
           },
         },
-      });
-      // После обновления конфига рендерим редактор
-      setRenderEditor(true);
-    }, 100); // можно и меньше, главное дать React время размонтировать
+      };
 
-    return () => clearTimeout(timer);
-  }, [url, fileName, updatedAt, details, isPdf, callbackUrl]);
+      setConfig(newConfig);
+      setRenderEditor(true);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      setRenderEditor(false);
+    };
+  }, [url, fileName, updatedAt, details, isPdf, callbackUrl, documentId]);
 
   if (!details) return null;
 
   return (
-    <>
-      {renderEditor && config && (
-        <DocumentEditor
-          ref={editorRef}
-          key={config.document.key}
-          width="100%"
-          height="100%"
-          id="docxEditor"
-          documentServerUrl={ROW_API_URL}
-          config={config}
-          events_onAppReady={(instance: any) => {
-            console.log("Instance: ", instance, instance?.editor);
-            // editorRef.current = instance;
-            if (editorRef) {
-              editorRef.current = {
-                ...instance,
-                print: () => {
-                  instance.downloadAs();
-                },
-              };
+    <OnlyOfficeErrorBoundary>
+      <div
+        ref={containerRef}
+        key={editorKey}
+        style={{ width: "100%", height: "100%" }}
+      >
+        {renderEditor && config && (
+          <DocumentEditor
+            ref={editorRef}
+            key={config.document.key}
+            width="100%"
+            height="100%"
+            id={editorIdRef.current}
+            documentServerUrl={ROW_API_URL}
+            config={config}
+            events_onAppReady={(instance: any) => {
+              console.log("Instance: ", instance, instance?.editor);
+            }}
+            onLoadComponentError={(code, desc) =>
+              console.error("Component load error:", code, desc)
             }
-          }}
-          onLoadComponentError={(code, desc) =>
-            console.error("Component load error:", code, desc)
-          }
-          // events_onDocumentStateChange={(event: any) => {
-          //   console.log("Event: ", event);
-          //   if (!event?.data) {
-          //     onSave?.();
-          //   }
-          // }}
-        />
-      )}
-    </>
+          />
+        )}
+      </div>
+    </OnlyOfficeErrorBoundary>
   );
 };

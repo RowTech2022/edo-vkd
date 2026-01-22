@@ -161,11 +161,11 @@ const IncomingCreateV4 = (props: Props) => {
   const [pdfFilePreviewModal, setPdfFilePreviewModal] = useState(false);
 
   let [addLettersFile, setAddLettersFile] = useState<UploadFileLetters[]>(
-    props?.entry?.files || []
+    props?.entry?.files || [],
   );
 
   const [byMainExecutor, setByMainExecutor] = useState<boolean>(
-    props.entry?.prepareByMainExecutor ?? false
+    props.entry?.prepareByMainExecutor ?? false,
   );
   const [answerByOwnMain] = useAnswerByOwnMainLettersV4Mutation();
 
@@ -185,7 +185,7 @@ const IncomingCreateV4 = (props: Props) => {
         value: el.name,
         prefix: el.prefix,
       };
-    }
+    },
   );
 
   const [saveList] = useSaveIncomingLettersV4Mutation();
@@ -202,6 +202,8 @@ const IncomingCreateV4 = (props: Props) => {
     useSignAnswerLetterV4Mutation();
 
   const [getAnswerById, { data: singleAnswer }] = useLazyGetAnswerByIdQuery();
+
+  console.log("singleAnswer", singleAnswer);
 
   const [fetchRecord] = useLazyFetchLettersV4ById2Query();
 
@@ -265,7 +267,7 @@ const IncomingCreateV4 = (props: Props) => {
 
         if ("error" in result) {
           throw new Error(
-            result.error?.data?.message || "Ошибка при визировании"
+            result.error?.data?.message || "Ошибка при визировании",
           );
         }
 
@@ -275,7 +277,7 @@ const IncomingCreateV4 = (props: Props) => {
         pending: "Загрузка...",
         success: "Документ визирован",
         error: "Произошла ошибка",
-      }
+      },
     );
   };
 
@@ -292,7 +294,7 @@ const IncomingCreateV4 = (props: Props) => {
 
         if ("error" in result) {
           throw new Error(
-            result.error?.data?.message || "Ошибка при визировании"
+            result.error?.data?.message || "Ошибка при визировании",
           );
         }
 
@@ -302,7 +304,7 @@ const IncomingCreateV4 = (props: Props) => {
         pending: "Загрузка...",
         success: "Документ визирован",
         error: "Произошла ошибка",
-      }
+      },
     );
   };
 
@@ -320,7 +322,7 @@ const IncomingCreateV4 = (props: Props) => {
   const [secretary, setSecretary] = useState<ValueId | null>(null);
   const [answerText, setAnswerText] = useState("");
   const [selectedFile, setSelectedFile] = useState<UploadFileLetters | null>(
-    null
+    null,
   );
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -421,13 +423,13 @@ const IncomingCreateV4 = (props: Props) => {
         pending: "Сохранение",
         success: "Сохранено",
         error: "Произошла ошибка",
-      }
+      },
     );
   };
 
   const canSave = useMemo<boolean>(() => {
     return Boolean(
-      props.new || (mainDTO && mainDTO.state === IncommingStatus.Registration)
+      props.new || (mainDTO && mainDTO.state === IncommingStatus.Registration),
     );
   }, [props]);
 
@@ -446,7 +448,7 @@ const IncomingCreateV4 = (props: Props) => {
         pending: "Входящее письмо сохраняется",
         success: "Входящее письмо сохранено",
         error: "Произошла ошибка",
-      }
+      },
     );
   };
 
@@ -471,7 +473,7 @@ const IncomingCreateV4 = (props: Props) => {
         pending: "Письмо отправка на закрытия",
         success: "Письмо закрыта",
         error: "Произошла ошибка",
-      }
+      },
     );
   };
 
@@ -511,7 +513,7 @@ const IncomingCreateV4 = (props: Props) => {
           pending: "Входящее письмо обновляется",
           success: "Входящее письмо обновлено",
           error: "Произошла ошибка",
-        }
+        },
       );
     }
   };
@@ -570,14 +572,14 @@ const IncomingCreateV4 = (props: Props) => {
         handleSave({
           ...values,
           receivedDate: dayjs(values?.receivedDate).format(
-            "YYYY-MM-DD HH:mm:ss"
+            "YYYY-MM-DD HH:mm:ss",
           ),
         });
       } else {
         handleUpdate({
           ...values,
           receivedDate: dayjs(values?.receivedDate).format(
-            "YYYY-MM-DD HH:mm:ss"
+            "YYYY-MM-DD HH:mm:ss",
           ),
         });
       }
@@ -599,7 +601,7 @@ const IncomingCreateV4 = (props: Props) => {
       });
     };
     executors.map((el: IParentApi) =>
-      el.childs.length > 0 ? findActiveParent(el as any) : ""
+      el.childs.length > 0 ? findActiveParent(el as any) : "",
     );
   }
 
@@ -623,7 +625,7 @@ const IncomingCreateV4 = (props: Props) => {
           const files = addLettersFile.filter((item) => item.url !== file.url);
           setAddLettersFile(files);
           setFieldValue("files", files);
-        }
+        },
       );
 
       toastPromise(promise, {
@@ -641,7 +643,7 @@ const IncomingCreateV4 = (props: Props) => {
     }
 
     const validFileType = await validateLettersFileType(
-      FileService.getFileExtension(file[0]?.name)
+      FileService.getFileExtension(file[0]?.name),
     );
 
     if (!validFileType.isValid) {
@@ -814,11 +816,11 @@ const IncomingCreateV4 = (props: Props) => {
                     getOptionLabel={(option) => option.value as string}
                     value={values?.chatFolder as any}
                     onChange={(event, value) => {
-                      setFieldValue("chatFolder", {
+                      (setFieldValue("chatFolder", {
                         id: value.id,
                         value: value.value,
                       }),
-                        setFieldValue("incomeNumber", value?.prefix);
+                        setFieldValue("incomeNumber", value?.prefix));
                     }}
                     isOptionEqualToValue={(option: any, value: any) =>
                       option.id === value.id
@@ -1012,7 +1014,7 @@ const IncomingCreateV4 = (props: Props) => {
                               }
                               onClick={() => {
                                 getAnswerById(
-                                  Number(searchParams?.recordId || params?.id)
+                                  Number(searchParams?.recordId || params?.id),
                                 ).then((resp) => {
                                   if (!resp.hasOwnProperty("error")) {
                                     setChatAnswerOpen(true);

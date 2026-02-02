@@ -270,7 +270,7 @@ export const ChatMessages: FC<IProps> = ({
                     sx={{ padding: "0" }}
                     onClick={() => {
                       showToastMessage();
-                      copyToClipboard(item.text ?? "");
+                      copyToClipboard(item.text);
                     }}
                   >
                     <Tooltip title="Скопировать">

@@ -10,6 +10,8 @@ import {
   CircularProgress,
   Tooltip,
   Avatar,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import NotesIcon from "@mui/icons-material/Notes";
 import AddMemberToConclusionModal from "./components/AddMemberToConclusionModal";
@@ -17,11 +19,18 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import CloseIcon from "@mui/icons-material/Close";
 import OwnEditor from "./OwnEditor";
-import { OnlyOfficeEditor, UploadFileCard } from "@ui";
+import {
+  ExcelIcon,
+  PdfIcon,
+  WordIcon,
+  OnlyOfficeEditor,
+  UploadFileCard,
+} from "@ui";
 import { UploadFileLetters } from "@services/internal/incomingApi";
+import { useFetchUserDetailsQuery } from "@services/admin/userProfileApi";
 import { validateLettersFileType } from "@root/shared/ui/Card/service/fileValidatorService";
 import FileService from "@root/shared/ui/Card/service/fileService";
-import { File as OwnFile } from "../../../Incoming/components/File";
+import { File as OwnFile } from "../File";
 import {
   useDeleteAnswerMemberIncomingV4Mutation,
   useDoneLetterV4Mutation,
@@ -96,6 +105,7 @@ function AnswerLetterV4Copy({
   isOutcoming?: boolean;
 }) {
   const signersList = useFetchLetterApproveListV4Query();
+  const { data: userDetails } = useFetchUserDetailsQuery();
   const officeRef = useRef<any>(null);
   const [answerMyBlanks, { data: blankList }] = useAnswerMyBlanksMutation();
   const [answerMyBlanksIncoming, { data: blankListIncoming }] =
@@ -112,6 +122,7 @@ function AnswerLetterV4Copy({
   const [usersModal, setUsersModal] = useState(false);
   const [editorValue, setEditorValue] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [initialUsersIds, setInitialUsersIds] = useState<number[]>([]);
   const [showContent, setShowContent] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
   const [allowEdit, setAllowEdit] = useState(false);
@@ -119,10 +130,12 @@ function AnswerLetterV4Copy({
   const [isUploading, setIsUploading] = useState(false);
   let [addLettersFile, setAddLettersFile] = useState<UploadFileLetters[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadFileLetters | null>(
-    null
+    null,
   );
   const [hasPdf, setHasPdf] = useState(false);
   const [pdfFilePreviewModal, setPdfFilePreviewModal] = useState(false);
+  const [isDocumentSaved, setIsDocumentSaved] = useState(false);
+  const [initialBlankId, setInitialBlankId] = useState<string | null>(null);
 
   const handleVisibleShowEditor = (state: boolean) => {
     setShowEditor(state);
@@ -150,6 +163,8 @@ function AnswerLetterV4Copy({
 
   const [showCommentEds, setShowCommentEds] = useState(false);
 
+  const [qrCodeResult, setQrCodeResult] = useState<boolean>(true);
+
   const [rejectLetter] = useRejectAnswerIncomingV4Mutation();
   const [updateAnswer] = useUpdateAnswerLetterV4Mutation();
   const [rejectLetterOutcoming] = useRejectAnswerOutcomingV4Mutation();
@@ -176,23 +191,10 @@ function AnswerLetterV4Copy({
     });
   };
 
-  const handleApprove = async (values: any) => {
-    await signAnswerLetter(values).then(() => {
-      refetchData();
-      setSignAnswerModal(false);
-      toast.success("Успешно подписан");
-      setModalState(false);
-    });
-  };
-
   const handleDoneLetter = async (values: any) => {
     await doneLetter(values).then(() => {
       refetchData();
       setDoneOpen(false);
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     });
   };
 
@@ -209,7 +211,7 @@ function AnswerLetterV4Copy({
     }
 
     const validFileType = await validateLettersFileType(
-      FileService.getFileExtension(file[0]?.name)
+      FileService.getFileExtension(file[0]?.name),
     );
 
     if (!validFileType.isValid) {
@@ -251,6 +253,7 @@ function AnswerLetterV4Copy({
           content: editorValue,
           attachments: addLettersFile,
           blankId: Number(JSON.parse(selectedBlank)?.id),
+          qr: qrCodeResult,
         });
         refetchData();
       } else {
@@ -285,19 +288,36 @@ function AnswerLetterV4Copy({
     setSelectedUsers((prev) => {
       const existingIds = new Set(prev.map((user) => user.id));
       const newUsers = param.filter((user) => !existingIds.has(user.id));
-      return [...prev, ...newUsers];
+      const updatedUsers = [...prev, ...newUsers];
+      // Очищаем/обновляем initialUsersIds при добавлении нового участника
+      // чтобы кнопка "Сохранить участников" активировалась
+      return updatedUsers;
     });
     setUsersModal(false);
   };
 
   const handleDeleteMember = (user: any) => () => {
+    // Сразу удаляем участника из списка на фронте (оптимистичное обновление)
+    const updatedUsers = selectedUsers.filter((item) => item !== user);
+    setSelectedUsers(updatedUsers);
+    // Обновляем начальные ID участников
+    setInitialUsersIds(updatedUsers.map((el) => el.id));
+    
+    // Отправляем запрос на бэк асинхронно (fire and forget)
     const promise = deleteMember({
       userId: user.id,
       [typeIdKey]: mainDTO?.id,
     }).then((res: any) => {
-      if (res.error) return;
-      setSelectedUsers(selectedUsers.filter((item) => item !== user));
+      if (res.error) {
+        // Если ошибка (например, участник не найден на бэке), 
+        // участник уже удален на фронте, просто показываем сообщение
+        toast.warning("Участник удален из списка, но не найден на сервере");
+        return;
+      }
       toast.success("Успешно удалено");
+    }).catch((error) => {
+      // При ошибке участник уже удален на фронте
+      toast.warning("Участник удален из списка, но произошла ошибка при удалении на сервере");
     });
 
     toast.promise(promise, {
@@ -349,9 +369,23 @@ function AnswerLetterV4Copy({
           !initialValues?.finalFormUrl || initialValues?.newFormat
             ? true
             : false,
+        qr: qrCodeResult,
       }).then(async (submitResp) => {
-        if (submitResp && paramFunc) {
-          paramFunc();
+        if (submitResp) {
+          // Mark document as saved after successful create
+          setIsDocumentSaved(true);
+          
+          // Update initialBlankId to current blank ID
+          if (selectedBlank) {
+            const currentBlank = JSON.parse(selectedBlank);
+            if (currentBlank?.id) {
+              setInitialBlankId(currentBlank.id.toString());
+            }
+          }
+          
+          if (paramFunc) {
+            paramFunc();
+          }
         }
       });
     } catch (error) {
@@ -360,48 +394,10 @@ function AnswerLetterV4Copy({
     }
   };
 
-  // const editorRef = useRef<{ print: () => void }>(null);
-
-  const printPdfByUrl = async (url: string) => {
-    if (!url) {
-      toast.warning("URL документа не найден");
-      return;
-    }
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Ошибка загрузки файла");
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = blobUrl;
-
-      document.body.appendChild(iframe);
-
-      iframe.onload = () => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      };
-    } catch (err) {
-      console.error(err);
-      toast.error("Не удалось распечатать файл");
-    }
-  };
+  const editorRef = useRef<{ print: () => void }>(null);
 
   const handleExternalPrint = () => {
-    // editorRef.current?.print();
-    if (initialValues?.finalPdfUrl) {
-      printPdfByUrl(initialValues.finalPdfUrl);
-      return;
-    }
-
-    if (officeRef.current && officeRef.current.print) {
-      officeRef.current.print();
-    } else {
-      toast.warning("PDF не сформирован");
-    }
+    editorRef.current?.print();
   };
 
   const generateRandomFileName = (file) => {
@@ -480,6 +476,10 @@ function AnswerLetterV4Copy({
           isOutcoming ? blankList : blankListIncoming
         )?.items?.find((el) => el.id === Number(initialValues?.blank?.id));
         setSelectedBlank(JSON.stringify(oneObj));
+        // Set initial blank ID for comparison
+        if (oneObj) {
+          setInitialBlankId(oneObj.id?.toString() || null);
+        }
       }
 
       if (initialValues?.finalFormUrl && initialValues?.newFormat) {
@@ -487,6 +487,8 @@ function AnswerLetterV4Copy({
 
         setInitialDoc(initialValues?.finalFormUrl);
         setIsPdf(false);
+        // If document already exists, mark as saved
+        setIsDocumentSaved(true);
       }
 
       if (initialValues?.docInfo) {
@@ -510,17 +512,23 @@ function AnswerLetterV4Copy({
         setAddLettersFile(initialValues?.attachments);
       }
 
-      setSelectedUsers(
-        initialValues?.executors?.map((el) => ({
-          id: el?.userId,
-          value: el?.userName,
-          signInfo: el?.signInfo,
-          signedAt: el?.signedAt,
-          comment: el?.comment,
-          userImage: el?.userImage,
-        }))
-      );
+      const executors = initialValues?.executors?.map((el) => ({
+        id: el?.userId,
+        value: el?.userName,
+        signInfo: el?.signInfo,
+        signedAt: el?.signedAt,
+        comment: el?.comment,
+        userImage: el?.userImage,
+      })) || [];
+      setSelectedUsers(executors);
+      // Сохраняем начальные ID участников для сравнения
+      setInitialUsersIds(executors.map((el) => el.id));
       setEditorValue(initialValues?.content);
+      
+      // Инициализация значения Qr-кодом из initialValues
+      if (initialValues?.результат !== undefined) {
+        setQrCodeResult(initialValues?.результат);
+      }
     }
   }, [initialValues]);
 
@@ -571,6 +579,10 @@ function AnswerLetterV4Copy({
               setShowEditor(false);
               let selected = JSON.parse(e.target.value);
 
+              // Reset document saved state when blank changes
+              setIsDocumentSaved(false);
+              setInitialBlankId(null);
+
               setSelecting(true);
 
               try {
@@ -578,23 +590,39 @@ function AnswerLetterV4Copy({
                 let fileName = "";
                 let fileBlob = null;
                 if (selected?.id) {
-                  if (/[А-Яа-яЁё]/.test(selected?.name || "")) {
-                    selected = new File(
-                      [selected],
-                      generateRandomFileName(selected.name),
-                      {
-                        type: selected.type,
-                        lastModified: selected.lastModified,
+                  // Используем оригинальное имя файла из API (fileName из списка бланков)
+                  // Это поле содержит чистое имя файла без префиксов
+                  fileName = selected?.fileName || selected?.name || "document.docx";
+                  
+                  // Если имя файла все еще содержит префиксы (на случай, если API вернул неправильное имя)
+                  if (fileName && /^\d+_\d+_/.test(fileName)) {
+                    // Убираем префиксы типа "165_883_" и суффиксы типа "_8_479614_651558"
+                    // Ищем паттерн: числа_числа_ИМЯ_числа_числа_числа.расширение
+                    const match = fileName.match(/^\d+_\d+_(.+?)_\d+_\d+_\d+\.(.+)$/);
+                    if (match) {
+                      fileName = `${match[1]}.${match[2]}`;
+                    } else {
+                      // Альтернативный паттерн: числа_числа_ИМЯ.расширение
+                      const match2 = fileName.match(/^\d+_\d+_(.+)$/);
+                      if (match2) {
+                        fileName = match2[1];
                       }
-                    );
+                    }
                   }
-                  fileName = getParam(selected?.fileUrl);
+                  
+                  // Декодируем URL-кодирование, если есть
+                  try {
+                    fileName = decodeURIComponent(fileName);
+                  } catch {
+                    // Если декодирование не удалось, оставляем как есть
+                  }
+                  
                   response = await fetch(selected?.fileUrl);
                   fileBlob = await response.blob();
                 } else {
                   response = await fetch("/Empty.docx");
                   fileBlob = await response.blob();
-                  fileName = generateRandomFileName({ name: "Файл.docx" });
+                  fileName = "Файл.docx";
                   selected = new File([fileBlob], fileName, {
                     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                   });
@@ -603,7 +631,7 @@ function AnswerLetterV4Copy({
                 const contentType =
                   response.headers.get("Content-Type") ||
                   "application/octet-stream";
-                const file = new File([fileBlob], "newFile", {
+                const file = new File([fileBlob], fileName, {
                   type: contentType,
                 });
                 const formData = new FormData();
@@ -641,7 +669,7 @@ function AnswerLetterV4Copy({
                 <MenuItem key={item.id} value={JSON.stringify(item)}>
                   {item.fileName}
                 </MenuItem>
-              )
+              ),
             )}
           </TextField>
 
@@ -679,84 +707,154 @@ function AnswerLetterV4Copy({
             multiple={false}
           />
 
-          <Button
-            disabled={
-              loading ||
-              allowEdit ||
-              initialValues?.transition?.buttonSettings?.btn_change?.readOnly
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={qrCodeResult}
+                onChange={(e) => setQrCodeResult(e.target.checked)}
+              />
             }
-            onClick={() => {
-              if (showEditor) {
-                const iframe = document.querySelector(
-                  "#editor iframe"
-                ) as HTMLIFrameElement;
-                console.log("Iframe: ", iframe.contentWindow);
-                iframe.contentWindow?.postMessage(
-                  JSON.stringify({
-                    method: "ExecuteCommand",
-                    params: ["Save", { forcesave: true }],
-                  }),
-                  "*"
-                );
-              }
+            label="С qr-кодом"
+            sx={{ marginTop: 2 }}
+          />
 
-              if (isPdf) {
-                setIsPdf(false);
-              } else {
-                setShowEditor(false);
-                handleSubmit({
-                  isRefetchable: true,
-                  executorIds: selectedUsers?.map((el) => el.id),
-                  signerId: +selectSigner?.id,
-                  language: 1,
-                  content: editorValue,
-                  blankId: Number(JSON.parse(selectedBlank)?.id),
-                  fileUrl: saveOrReplaceData || {
-                    url: initialValues?.finalFormUrl,
-                  },
-                  attachments: addLettersFile,
-                  newFormat:
-                    !initialValues?.finalFormUrl || initialValues?.newFormat
-                      ? true
-                      : false,
-                }).then((resp) => {
-                  if (isPdf && showEditor) {
-                    handleVisibleShowEditor(false);
-                    setTimeout(() => {
-                      setAllowEdit(true);
-                      handleVisibleShowEditor(true);
-                    }, 2000);
-                  }
-                });
+          {!initialValues?.transition?.buttonSettings?.btn_change?.hide && (
+            <Button
+              disabled={
+                // Если readOnly === false, кнопка всегда активна (enabled), независимо от других условий
+                // Если readOnly !== false (true или undefined), применяются все остальные условия
+                initialValues?.transition?.buttonSettings?.btn_change?.readOnly === false
+                  ? false
+                  : loading ||
+                    !selectedBlank || // Нет выбранного бланка - кнопка неактивна
+                    allowEdit ||
+                    initialValues?.transition?.buttonSettings?.btn_change?.readOnly ||
+                    // Кнопка активна только если:
+                    // 1. initialBlankId === null (первый выбор бланка) ИЛИ
+                    // 2. initialBlankId !== null И выбранный бланк отличается от initialBlankId (бланк изменился)
+                    // Иначе (бланк выбран и не изменился) - кнопка неактивна
+                    (initialBlankId !== null && selectedBlank && JSON.parse(selectedBlank)?.id?.toString() === initialBlankId)
               }
-            }}
-            type="button"
-            variant="contained"
-          >
-            {hasPdf && showEditor ? "Изменить" : "Сохранить"}
-          </Button>
+              onClick={() => {
+                // Если это кнопка "Изменить" (hasPdf && showEditor), открываем Word файл из finalFormUrl
+                if (hasPdf && showEditor) {
+                  if (initialValues?.finalFormUrl) {
+                    // Устанавливаем Word файл из finalFormUrl
+                    setInitialDoc(initialValues?.finalFormUrl);
+                    setIsPdf(false);
+                    setHasPdf(false);
+                    setAllowEdit(true);
+                    
+                    // Обновляем docInfo для открытия Word файла
+                    // Обновляем updatedAt, чтобы редактор перезагрузился с новым файлом
+                    setDocInfo({
+                      ...docInfo,
+                      fileUrl: initialValues?.finalFormUrl,
+                      fileName: getParam(initialValues?.finalFormUrl) || "document.docx",
+                      fileType: "INCOMING_V4_FINAL_FILE",
+                      updatedAt: new Date().toISOString().slice(0, 19),
+                    });
+                  } else {
+                    toast.warning("Word файл не найден");
+                  }
+                  return;
+                }
+
+                // Если редактор открыт, сохраняем документ
+                if (showEditor) {
+                  const iframe = document.querySelector(
+                    "#editor iframe",
+                  ) as HTMLIFrameElement;
+                  console.log("Iframe: ", iframe.contentWindow);
+                  iframe.contentWindow?.postMessage(
+                    JSON.stringify({
+                      method: "ExecuteCommand",
+                      params: ["Save", { forcesave: true }],
+                    }),
+                    "*",
+                  );
+                }
+
+                if (isPdf) {
+                  setIsPdf(false);
+                } else {
+                  setShowEditor(false);
+                  handleSubmit({
+                    isRefetchable: true,
+                    executorIds: selectedUsers?.map((el) => el.id),
+                    signerId: +selectSigner?.id,
+                    language: 1,
+                    content: editorValue,
+                    blankId: Number(JSON.parse(selectedBlank)?.id),
+                    fileUrl: saveOrReplaceData || {
+                      url: initialValues?.finalFormUrl,
+                    },
+                    attachments: addLettersFile,
+                    newFormat:
+                      !initialValues?.finalFormUrl || initialValues?.newFormat
+                        ? true
+                        : false,
+                    qr: qrCodeResult,
+                  }).then((resp) => {
+                    if (isPdf && showEditor) {
+                      handleVisibleShowEditor(false);
+                      setTimeout(() => {
+                        setAllowEdit(true);
+                        handleVisibleShowEditor(true);
+                      }, 2000);
+                    }
+                  });
+                }
+              }}
+              type="button"
+              variant="contained"
+            >
+              {hasPdf && showEditor ? "Изменить" : "Сохранить"}
+            </Button>
+          )}
 
           {initialDoc || selectedBlank ? (
             <div className="tw-w-full tw-border tw-p-4 tw-rounded-md">
               <p className="tw-text-blue-700">Документ</p>
               <div className="tw-flex tw-flex-row tw-items-center tw-justify-center tw-space-x-3 tw-p-2">
-                <InsertDriveFileIcon sx={{ fontSize: 40 }} />
+                {(() => {
+                  const fileName = initialDoc ? getParam(initialDoc) : "";
+                  const lowerFileName = fileName.toLowerCase();
+
+                  if (
+                    lowerFileName.endsWith(".doc") ||
+                    lowerFileName.endsWith(".docx")
+                  ) {
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><WordIcon /></div>;
+                  }
+
+                  if (
+                    lowerFileName.endsWith(".xls") ||
+                    lowerFileName.endsWith(".xlsx")
+                  ) {
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><ExcelIcon /></div>;
+                  }
+
+                  if (lowerFileName.endsWith(".pdf")) {
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><PdfIcon /></div>;
+                  }
+
+                  return <InsertDriveFileIcon sx={{ fontSize: 48 }} />;
+                })()}
                 <div className="tw-w-[85%] tw-flex tw-flex-col tw-space-y-3">
-                  <p className="tw-text-[12px] tw-font-[600]">
+                  <p className="tw-text-[14px] tw-font-[600]">
                     Название:{" "}
-                    <span className="tw-font-[300]">
+                    <span className="tw-font-[300] tw-text-[14px]">
                       {initialDoc ? getParam(initialDoc) : "Без бланка"}
                     </span>
                   </p>
                   <div className="tw-flex tw-flex-row tw-space-x-2">
                     <Button
-                      disabled={selecting}
-                      size="small"
-                      sx={{ fontSize: "12px" }}
+                      disabled={selecting || !isDocumentSaved}
                       variant="contained"
                       startIcon={<OpenInNewIcon />}
                       onClick={() => {
-                        if (selecting) return;
+                        if (selecting || !isDocumentSaved) return;
                         setPdfFilePreviewModal(false);
                         handleVisibleShowEditor(false);
                         setTimeout(() => {
@@ -768,8 +866,7 @@ function AnswerLetterV4Copy({
                       Открыть
                     </Button>
                     <Button
-                      size="small"
-                      sx={{ fontSize: "12px" }}
+                      disabled={!isDocumentSaved}
                       variant="contained"
                       startIcon={<CloseIcon />}
                       onClick={() => {
@@ -805,12 +902,10 @@ function AnswerLetterV4Copy({
           {!initialValues?.transition?.buttonSettings?.btn_set_sign?.hide ? (
             <Button
               onClick={() => {
-                handleActionWithEditorClose(null);
-                setModalState(false);
                 if (mainDTO) {
                   getAnswerDataForSignIncoming(mainDTO?.id).then(({ data }) => {
                     if (data && docInfo) {
-                      refetchAnswer();
+                      refetchData?.();
                     }
                   });
                 }
@@ -830,7 +925,7 @@ function AnswerLetterV4Copy({
 
           {!initialValues?.transition?.buttonSettings?.btn_sign?.hide ? (
             <Button
-              onClick={() => handleActionWithEditorClose(signAnswerClick)}
+              onClick={signAnswerClick}
               disabled={
                 initialValues?.transition?.buttonSettings?.btn_sign?.readOnly
               }
@@ -851,7 +946,33 @@ function AnswerLetterV4Copy({
               if (initialValues?.newFormat) {
                 handleExternalPrint();
               } else {
-                printPdfByUrl(url);
+                if (!url) {
+                  toast.warning("PDF не найден");
+                  return;
+                }
+
+                try {
+                  const response = await fetch(url);
+                  if (!response.ok) throw new Error("Ошибка загрузки PDF");
+
+                  const blob = await response.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+
+                  const iframe = document.createElement("iframe");
+                  iframe.style.display = "none";
+                  iframe.src = blobUrl;
+
+                  document.body.appendChild(iframe);
+
+                  iframe.onload = () => {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                    // НЕ удаляем iframe и blobUrl
+                  };
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Не удалось распечатать PDF");
+                }
               }
             }}
           >
@@ -862,9 +983,7 @@ function AnswerLetterV4Copy({
               color="error"
               type="button"
               variant="contained"
-              onClick={() =>
-                handleActionWithEditorClose(() => setRejectModalOpen(true))
-              }
+              onClick={() => setRejectModalOpen(true)}
               disabled={
                 initialValues?.transition?.buttonSettings?.btn_reject?.readOnly
               }
@@ -875,19 +994,21 @@ function AnswerLetterV4Copy({
             <></>
           )}
 
-          <Button
-            disabled={
-              initialValues?.transition?.buttonSettings?.btn_add_member
-                ?.readOnly
-            }
-            onClick={() => {
-              setUsersModal(true);
-            }}
-            type="button"
-            variant="outlined"
-          >
-            Добавить участника
-          </Button>
+          {!initialValues?.transition?.buttonSettings?.btn_add_member?.hide && (
+            <Button
+              disabled={
+                initialValues?.transition?.buttonSettings?.btn_add_member
+                  ?.readOnly
+              }
+              onClick={() => {
+                setUsersModal(true);
+              }}
+              type="button"
+              variant="outlined"
+            >
+              Добавить участника
+            </Button>
+          )}
 
           <div className="tw-flex tw-flex-col tw-space-y-2">
             {selectedUsers?.map((e: any) => {
@@ -898,8 +1019,8 @@ function AnswerLetterV4Copy({
                       !e.comment && e.signedAt
                         ? "tw-bg-[#28ff2880]"
                         : e.comment && e.signedAt
-                        ? "tw-bg-[#ffa600ae]"
-                        : "tw-bg-transparent"
+                          ? "tw-bg-[#ffa600ae]"
+                          : "tw-bg-transparent"
                     }`}
                   >
                     <Tooltip title={e?.value || ""} placement="top-start">
@@ -921,16 +1042,26 @@ function AnswerLetterV4Copy({
                         />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip
-                      className="tw-absolute tw-top-4 tw-right-3"
-                      title="Удалить участника"
-                    >
-                      <ClearIcon
-                        color="error"
-                        className="tw-cursor-pointer"
-                        onClick={handleDeleteMember(e)}
-                      />
-                    </Tooltip>
+                    {!initialValues?.transition?.buttonSettings?.btn_add_member?.hide && (
+                      <Tooltip
+                        className="tw-absolute tw-top-4 tw-right-3"
+                        title="Удалить участника"
+                      >
+                        <ClearIcon
+                          color="error"
+                          className={`tw-cursor-pointer ${
+                            initialValues?.transition?.buttonSettings?.btn_add_member?.readOnly
+                              ? "tw-opacity-50 tw-cursor-not-allowed"
+                              : ""
+                          }`}
+                          onClick={
+                            initialValues?.transition?.buttonSettings?.btn_add_member?.readOnly
+                              ? undefined
+                              : handleDeleteMember(e)
+                          }
+                        />
+                      </Tooltip>
+                    )}
                   </div>
                   {e.id === showMember ? (
                     <div className="tw-bg-[#ffffffbd] tw-flex tw-flex-col tw-gap-1 tw-items-start tw-py-[20px] tw-px-[10px] tw-w-full">
@@ -984,6 +1115,75 @@ function AnswerLetterV4Copy({
             })}
           </div>
 
+          {/* Кнопка Сохранить для участников - показывается когда участники изменены */}
+          {(() => {
+            const currentUsersIds = selectedUsers?.map((el) => el.id) || [];
+            const usersChanged = 
+              currentUsersIds.length !== initialUsersIds.length ||
+              !currentUsersIds.every((id) => initialUsersIds.includes(id)) ||
+              !initialUsersIds.every((id) => currentUsersIds.includes(id));
+
+            if (!usersChanged) {
+              return null;
+            }
+
+            return (
+              <Button
+                onClick={async () => {
+                  if (!selectSigner) {
+                    toast.warning("Выберите подписывающего");
+                    return;
+                  }
+                  if (!selectedBlank) {
+                    toast.warning("Выберите бланк");
+                    return;
+                  }
+
+                  try {
+                    const result = await handleSubmit({
+                      isRefetchable: true,
+                      executorIds: selectedUsers?.map((el) => el.id),
+                      signerId: +selectSigner?.id,
+                      language: 1,
+                      content: editorValue,
+                      blankId: Number(JSON.parse(selectedBlank)?.id),
+                      fileUrl: saveOrReplaceData || {
+                        url: initialValues?.finalFormUrl,
+                      },
+                      attachments: addLettersFile,
+                      newFormat:
+                        !initialValues?.finalFormUrl || initialValues?.newFormat
+                          ? true
+                          : false,
+                      qr: qrCodeResult,
+                    });
+
+                    if (result) {
+                      // Обновляем начальные ID участников после успешного сохранения
+                      setInitialUsersIds(selectedUsers?.map((el) => el.id) || []);
+                      toast.success("Участники успешно сохранены");
+                      if (refetchData) {
+                        await refetchData();
+                      }
+                      if (refetchAnswer) {
+                        await refetchAnswer();
+                      }
+                    }
+                  } catch (error) {
+                    console.error("Ошибка при сохранении участников:", error);
+                    toast.error("Произошла ошибка при сохранении участников");
+                  }
+                }}
+                type="button"
+                variant="contained"
+                fullWidth
+                disabled={loading}
+              >
+                Сохранить участников
+              </Button>
+            );
+          })()}
+
           {/* <Button
             onClick={handleCheckFinalPdf}
             type="button"
@@ -998,9 +1198,9 @@ function AnswerLetterV4Copy({
                 initialValues?.transition?.buttonSettings?.btn_sendToApprove
                   ?.readOnly
               }
-              onClick={() =>
-                handleActionWithEditorClose(() => setSendToApproveOpen(true))
-              }
+              onClick={() => {
+                setSendToApproveOpen(true);
+              }}
               type="button"
               variant="contained"
             >
@@ -1010,21 +1210,25 @@ function AnswerLetterV4Copy({
             <></>
           )}
 
-          <div className="tw-flex tw-flex-1 tw-items-end">
-            <Button
-              disabled={
-                initialValues?.transition?.buttonSettings?.btn_done?.readOnly
-              }
-              fullWidth
-              onClick={() =>
-                handleActionWithEditorClose(() => setDoneOpen(true))
-              }
-              type="button"
-              variant="contained"
-            >
-              Завершить
-            </Button>
-          </div>
+          {!initialValues?.transition?.buttonSettings?.btn_done?.hide ? (
+            <div className="tw-flex tw-flex-1 tw-items-end">
+              <Button
+                disabled={
+                  initialValues?.transition?.buttonSettings?.btn_done?.readOnly
+                }
+                fullWidth
+                onClick={() => {
+                  setDoneOpen(true);
+                }}
+                type="button"
+                variant="contained"
+              >
+                Завершить
+              </Button>
+            </div>
+          ) : (
+            <></>
+          )}
 
           <div className="tw-w-full">
             {!initialValues?.transition?.buttonSettings?.btn_attachment
@@ -1057,7 +1261,7 @@ function AnswerLetterV4Copy({
             </div>
           </div>
         </div>
-        <div className="tw-w-[80%] tw-h-full">
+        <div className="tw-w-[80%] tw-h-full tw-pt-[20px]">
           {pdfFilePreviewModal && selectedFile?.url && (
             <DocumentPdf url={selectedFile?.url} />
           )}
@@ -1075,23 +1279,34 @@ function AnswerLetterV4Copy({
               )}
             </div>
           ) : showEditor ? (
-            <div id="editor" className="tw-w-full tw-h-full">
-              <OnlyOfficeEditor
-                editorRef={officeRef}
-                url={
-                  hasPdf && !allowEdit
-                    ? initialValues?.finalPdfUrl
-                    : docInfo?.fileUrl
-                }
-                fileName={
-                  hasPdf && !allowEdit
-                    ? getParam(initialValues?.finalPdfUrl)
-                    : docInfo?.fileName
-                }
-                documentId={docInfo?.documentId || ""}
-                fileType={docInfo?.fileType}
-                updatedAt={docInfo?.updatedAt?.slice(0, 19) || ""}
-              />
+            <div id="editor" className="tw-w-full tw-h-full tw-flex tw-flex-col">
+              <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-2 tw-bg-gray-100 tw-border-b tw-border-gray-300">
+                <div className="tw-flex tw-items-center tw-gap-2">
+                  <span className="tw-text-sm tw-font-medium tw-text-gray-700">
+                    {userDetails?.displayName || "Пользователь"}
+                  </span>
+                </div>
+              </div>
+              <div className="tw-flex-1 tw-overflow-hidden" style={{
+                position: 'relative'
+              }}>
+                <OnlyOfficeEditor
+                  editorRef={officeRef}
+                  url={
+                    hasPdf && !allowEdit
+                      ? initialValues?.finalPdfUrl
+                      : docInfo?.fileUrl
+                  }
+                  fileName={
+                    hasPdf && !allowEdit
+                      ? getParam(initialValues?.finalPdfUrl)
+                      : docInfo?.fileName
+                  }
+                  documentId={docInfo?.documentId || ""}
+                  fileType={docInfo?.fileType}
+                  updatedAt={docInfo?.updatedAt?.slice(0, 19) || ""}
+                />
+              </div>
               {/* <SDKEditor
                 ref={editorRef}
                 initialDoc={initialDoc}
@@ -1148,12 +1363,19 @@ function AnswerLetterV4Copy({
           />
 
           <Button
-            onClick={() =>
-              handleApprove({
+            onClick={async () => {
+              const resp = await signAnswerLetter({
                 incomingId: initialValues?.incomingId,
                 comment: signAnswerComment,
-              })
-            }
+              });
+
+              if (!resp.hasOwnProperty("error")) {
+                setSignAnswerModal(false);
+                toast.success("Успешно подписан");
+              }
+              // Вызываем refetch в любом случае после подписания
+              refetchData();
+            }}
             sx={{ minWidth: 136 }}
             variant="contained"
             type="button"

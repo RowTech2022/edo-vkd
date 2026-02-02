@@ -19,6 +19,7 @@ interface IProps {
   fileType?: string;
   updatedAt?: string;
   onSave?: () => void;
+  onDocumentStateChange?: (event: any) => void;
   editorRef?: MutableRefObject<any>;
 }
 
@@ -33,6 +34,7 @@ export const OnlyOfficeEditor: FC<IProps> = ({
   updatedAt,
   editorRef,
   onSave,
+  onDocumentStateChange,
 }) => {
   const { data: details } = useFetchUserDetailsQuery();
 
@@ -82,15 +84,23 @@ export const OnlyOfficeEditor: FC<IProps> = ({
     setRenderEditor(false);
     setConfig(null);
 
-    const modifiedUrl = `${url?.slice(
-      0,
-      url?.indexOf("?"),
-    )}?fileName=${fileName}&updatedAt=${updatedAt}`;
+    // Build URL with cache-busting parameters
+    // If URL already has query params, append to them; otherwise create new query string
+    const urlBase = url?.split("?")[0] || url;
+    const existingParams = url?.includes("?") ? url.split("?")[1] : "";
+    const params = new URLSearchParams(existingParams);
+    params.set("fileName", fileName);
+    params.set("updatedAt", updatedAt);
+    // Add cache buster if _t parameter exists in URL
+    if (url?.includes("_t=")) {
+      const tMatch = url.match(/_t=(\d+)/);
+      if (tMatch) {
+        params.set("_t", tMatch[1]);
+      }
+    }
+    const modifiedUrl = `${urlBase}?${params.toString()}`;
 
-    console.log("Url: ", {
-      url: modifiedUrl,
-      key: fileName + documentId + updatedAt,
-    });
+    console.log("Url: ", { url: modifiedUrl, key: fileName + documentId + updatedAt });
 
     // Задержка, чтобы дать React время размонтировать
     const timer = setTimeout(() => {

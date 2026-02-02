@@ -349,6 +349,15 @@ function AnswerLetterV4({
     }
   }, [modalState, pdfResponse]);
 
+  // Auto-open editor when modal opens and document exists
+  useEffect(() => {
+    if (modalState && initialDoc && initialValues?.newFormat && !showEditor) {
+      setTimeout(() => {
+        handleVisibleShowEditor(true);
+      }, 300);
+    }
+  }, [modalState, initialDoc, initialValues?.newFormat]);
+
   useEffect(() => {
     if (initialValues) {
       if (initialValues?.signer?.userId) {
@@ -369,11 +378,23 @@ function AnswerLetterV4({
       if (initialValues?.finalFormUrl && initialValues?.newFormat) {
         setInitialDoc(initialValues?.finalFormUrl);
         setIsPdf(false);
+        // Automatically open editor if document exists
+        if (initialValues?.finalFormUrl) {
+          setTimeout(() => {
+            handleVisibleShowEditor(true);
+          }, 500);
+        }
       }
 
       if (initialValues?.finalPdfUrl && initialValues?.newFormat) {
         setInitialDoc(initialValues?.finalPdfUrl);
         setIsPdf(true);
+        // Automatically open editor if PDF exists
+        if (initialValues?.finalPdfUrl) {
+          setTimeout(() => {
+            handleVisibleShowEditor(true);
+          }, 500);
+        }
       }
 
       if (initialValues?.attachments) {
@@ -500,39 +521,37 @@ function AnswerLetterV4({
                     lowerFileName.endsWith(".doc") ||
                     lowerFileName.endsWith(".docx")
                   ) {
-                    return <WordIcon />;
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><WordIcon /></div>;
                   }
 
                   if (
                     lowerFileName.endsWith(".xls") ||
                     lowerFileName.endsWith(".xlsx")
                   ) {
-                    return <ExcelIcon />;
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><ExcelIcon /></div>;
                   }
 
                   if (lowerFileName.endsWith(".pdf")) {
-                    return <PdfIcon />;
+                    return <div style={{ transform: 'scale(1.5)', display: 'inline-block' }}><PdfIcon /></div>;
                   }
 
-                  return <InsertDriveFileIcon sx={{ fontSize: 40 }} />;
+                  return <InsertDriveFileIcon sx={{ fontSize: 48 }} />;
                 })()}
                 <div className="tw-w-[85%] tw-flex tw-flex-col tw-space-y-3">
-                  <p className="tw-text-[12px] tw-font-[600]">
+                  <p className="tw-text-[14px] tw-font-[600]">
                     Название:
                     <Tooltip
                       title={
                         initialDoc ? findFileName(initialDoc) : "Без бланка"
                       }
                     >
-                      <span className="tw-font-[300] tw-text-ellipsis tw-whitespace-nowrap tw-overflow-hidden tw-block">
+                      <span className="tw-font-[300] tw-text-[14px] tw-text-ellipsis tw-whitespace-nowrap tw-overflow-hidden tw-block">
                         {initialDoc ? findFileName(initialDoc) : "Без бланка"}
                       </span>
                     </Tooltip>
                   </p>
                   <div className="tw-flex tw-flex-row tw-space-x-2">
                     <Button
-                      size="small"
-                      sx={{ fontSize: "12px" }}
                       variant="contained"
                       startIcon={<OpenInNewIcon />}
                       onClick={() => {
@@ -543,8 +562,6 @@ function AnswerLetterV4({
                       Открыть
                     </Button>
                     <Button
-                      size="small"
-                      sx={{ fontSize: "12px" }}
                       variant="contained"
                       startIcon={<CloseIcon />}
                       onClick={() => handleVisibleShowEditor(false)}
@@ -846,8 +863,34 @@ function AnswerLetterV4({
               )}
             </div>
           ) : showEditor ? (
-            <div className="tw-w-full tw-h-full">
-              <OnlyOfficeEditor url={initialDoc} fileName="Test.docx" />
+            <div className="tw-w-full tw-h-full tw-flex tw-flex-col">
+              <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-2 tw-bg-gray-100 tw-border-b tw-border-gray-300">
+                <div className="tw-flex tw-items-center tw-gap-2">
+                  <span className="tw-text-sm tw-font-medium tw-text-gray-700">
+                    {initialDoc ? findFileName(initialDoc) || "Документ" : "Документ"}
+                  </span>
+                </div>
+                <IconButton
+                  size="small"
+                  onClick={() => setModalState(false)}
+                  sx={{
+                    padding: "4px",
+                    "&:hover": {
+                      backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    },
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </div>
+              <div className="tw-flex-1 tw-overflow-hidden" style={{
+                position: 'relative'
+              }}>
+                <OnlyOfficeEditor 
+                  url={initialDoc} 
+                  fileName={initialDoc ? findFileName(initialDoc) || "document.docx" : "document.docx"} 
+                />
+              </div>
               {/* <SDKEditor
                 ref={editorRef}
                 initialDoc={initialDoc}

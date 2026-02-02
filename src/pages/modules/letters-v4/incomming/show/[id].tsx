@@ -7,17 +7,21 @@ import { IntcomingCreateV4 } from "@components";
 export const LettersV4IncomingShowPage = () => {
   const params = useParams();
 
-  const incomingLetterId = parseInt(params.id as string);
+  const incomingLetterId = params.id as string;
 
   const [fetchData, { data: incomingLetterList, isSuccess, isFetching }] =
     useLazyFetchLettersV4ByIdQuery();
 
   const refetchData = () => {
-    fetchData(incomingLetterId);
+    if (incomingLetterId) {
+      fetchData(incomingLetterId);
+    }
   };
 
   useEffect(() => {
-    fetchData(incomingLetterId);
+    if (incomingLetterId) {
+      fetchData(incomingLetterId);
+    }
   }, [incomingLetterId]);
 
   return (

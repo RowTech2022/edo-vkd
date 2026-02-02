@@ -31,8 +31,11 @@ export const SendTopApproveOrDoneModal: FC<IRejectModal> = ({
     if (entry && payload) {
       toast.promise(
         executeAction({
-          incomingId: entry.id,
+          outComingId: entry.id || entry["outComingId"],
           comment: payload.comment,
+        }).then((result) => {
+          onClose();
+          return result;
         }),
         {
           pending: "Форма сохраняется",
@@ -60,7 +63,6 @@ export const SendTopApproveOrDoneModal: FC<IRejectModal> = ({
               }}
               onSubmit={({ reason, comment }) => {
                 handleRejectForm({ reason, comment });
-                onClose();
               }}
             >
               {({ values, setFieldValue, handleChange, touched, errors }) => (

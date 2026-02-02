@@ -14,6 +14,8 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useFormik } from "formik";
@@ -47,7 +49,6 @@ import ChatIcon from "@mui/icons-material/Chat";
 import { IncomingNewLettersMainDTO } from "@services/lettersNewApi";
 
 import {
-  useFetchContragentQuery,
   useFetchSenderTypeQuery,
   useFetchOrganisationListQuery,
 } from "@services/generalApi";
@@ -90,8 +91,8 @@ import ChatV4 from "./components/ChatV4/ChatV4";
 import DocumentPdf from "./components/ChatV4/components/DocumentPdf";
 import { useDynamicSearchParams } from "@hooks";
 import { AppRoutes } from "@configs";
-import AnswerLetterV4Copy from "./components/ChatV4/AnswerLetterV4Copy";
 import SelectOrgModal from "../components/SelectOrgModal";
+import AnswerLetterV4Copy from "./components/ChatV4/AnswerLetterV4Incomming";
 
 type Props = {
   new?: boolean;
@@ -104,6 +105,7 @@ type Props = {
 const INITIAL_VALUES: Pick<
   Nullable<IncomingNewLettersMainDTO>,
   | "incomeNumber"
+  | "autoGenerateOutcoming"
   | "outcomeNumber"
   | "receivedDate"
   | "senderType"
@@ -118,6 +120,7 @@ const INITIAL_VALUES: Pick<
   | "files"
 > = {
   incomeNumber: "",
+  autoGenerateOutcoming: false,
   outcomeNumber: "",
   receivedDate: null,
   senderType: null,
@@ -218,26 +221,26 @@ const IncomingCreateV4 = (props: Props) => {
   const [getExecutors, { data: executorsResp }] = useLazyGetExecutorsQuery();
 
   const refetchGetExecutors = () => {
-    getExecutors(Number(searchParams?.recordId || params?.id));
+    getExecutors(searchParams?.recordId || params?.id || '');
   };
 
   useEffect(() => {
     if (searchParams?.recordId || params?.id) {
-      getExecutors(Number(searchParams?.recordId || params?.id));
+      getExecutors(searchParams?.recordId || params?.id || '');
     }
   }, [searchParams?.recordId, params?.id]);
 
   useEffect(() => {
     if (makeSubVIsaSuccess || makeThirdVisaSuccess) {
-      getExecutors(Number(searchParams?.recordId || params?.id));
+      getExecutors(searchParams?.recordId || params?.id || '');
     }
   }, [makeSubVIsaSuccess, makeThirdVisaSuccess, getExecutors]);
 
   useEffect(() => {
     if (makeFirstVisaSuccess) {
-      getExecutors(Number(searchParams?.recordId || params?.id));
+      getExecutors(searchParams?.recordId || params?.id || '');
 
-      fetchRecord(+(searchParams?.recordId || params?.id)).then((res) => {
+      fetchRecord(searchParams?.recordId || params?.id || '').then((res) => {
         if (res.data) {
           setMainDTO(res.data);
         }
@@ -350,7 +353,7 @@ const IncomingCreateV4 = (props: Props) => {
 
       if (!resp.hasOwnProperty("error")) {
         isRefetchable &&
-          getAnswerById(Number(searchParams?.recordId || params?.id));
+          getAnswerById(searchParams?.recordId || params?.id || '');
         toast.success("Успешно сохранено");
         return true; // УСПЕХ
       } else {
@@ -958,6 +961,19 @@ const IncomingCreateV4 = (props: Props) => {
                   setFieldValue("content1", event.target.value);
                 }}
               />
+              <FormControlLabel
+                className="tw-col-span-2"
+                control={
+                  <Checkbox
+                    name="Автоматический генерировать ответное письмо"
+                    checked={values.autoGenerateOutcoming}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      setFieldValue("autoGenerateOutcoming", event.target.checked);
+                    }}
+                  />
+                }
+                label="Автоматический генерировать ответное письмо"
+              />
             </div>
           </div>
         </Card>
@@ -1014,7 +1030,7 @@ const IncomingCreateV4 = (props: Props) => {
                               }
                               onClick={() => {
                                 getAnswerById(
-                                  Number(searchParams?.recordId || params?.id),
+                                  searchParams?.recordId || params?.id || '',
                                 ).then((resp) => {
                                   if (!resp.hasOwnProperty("error")) {
                                     setChatAnswerOpen(true);
@@ -1218,6 +1234,7 @@ const IncomingCreateV4 = (props: Props) => {
             onSubmit={modal.onSubmit}
             resolutionId={modal.resolutionId}
             forExecute={modal.forExecute}
+            refetchData={props?.refetchData}
             {...props}
           />
         </Modal>
@@ -1277,10 +1294,10 @@ const IncomingCreateV4 = (props: Props) => {
         initialValues={createAnswerData || singleAnswer}
         refetchData={() => {
           refetchGetExecutors();
-          return getAnswerById(Number(searchParams?.recordId || params?.id));
+          return getAnswerById(searchParams?.recordId || params?.id || '');
         }}
         refetchAnswer={() => {
-          return getAnswerById(Number(searchParams?.recordId || params?.id));
+          return getAnswerById(searchParams?.recordId || params?.id || '');
         }}
       />
 

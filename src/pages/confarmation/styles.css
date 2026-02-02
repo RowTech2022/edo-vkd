@@ -1,3 +1,14 @@
 .MuiPaper-root{
     border-radius: 1px !important; 
 }
+
+/* Скрываем ошибки PDF viewer */
+.rpv-core__viewer--error,
+.rpv-core__viewer--error *,
+div[class*="error"]:has-text("Missing PDF"),
+div:has-text("Missing PDF"),
+div:has-text("Missing PDF") * {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

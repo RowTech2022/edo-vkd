@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import { useFetchLetterApproveListQuery } from "@services/generalApi";
 import { useSendToResolutionV3Mutation } from "@services/lettersApiV3";
 
-const ResolutionSend = ({ onClose, id, ...props }: any) => {
+const ResolutionSend = ({ onClose, id, refetchData, ...props }: any) => {
   const [sendToResolution] = useSendToResolutionV3Mutation();
   const handleSubmit = (values: {
     approveBy: { id: string; value: string } | null;
@@ -26,6 +26,7 @@ const ResolutionSend = ({ onClose, id, ...props }: any) => {
           currentState: props.entry.state,
           timestamp: props.entry.timestamp,
         });
+        refetchData && refetchData();
         onClose && onClose();
       },
       {

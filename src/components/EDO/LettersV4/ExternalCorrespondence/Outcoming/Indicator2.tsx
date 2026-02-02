@@ -13,11 +13,9 @@ export default function Indicator2(props: Props) {
   ];
   const states2 = [
     { id: 1, name: "Новое письмо" },
-    // { id: 2, name: "Канцелярия" },
     { id: 3, name: "Подготовка ответа" },
     { id: 4, name: "Ожидания соглосавания" },
     { id: 5, name: "Ожидания подписа" },
-    { id: 6, name: "Канцелярия" },
     { id: 7, name: "Ожидания завершение" },
     { id: 8, name: "Ответ отклонено" },
     { id: 11, name: "Отклонено" },

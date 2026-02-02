@@ -185,13 +185,25 @@ function AnswerLetterV4({
   };
 
   const handleDeleteMember = (user: any) => () => {
+    // Сразу удаляем участника из списка на фронте (оптимистичное обновление)
+    const updatedUsers = selectedUsers.filter((item) => item !== user);
+    setSelectedUsers(updatedUsers);
+    
+    // Отправляем запрос на бэк асинхронно (fire and forget)
     const promise = deleteMember({
       userId: user.id,
       incomingId: mainDTO?.id,
     }).then((res: any) => {
-      if (res.error) return;
-      setSelectedUsers(selectedUsers.filter((item) => item !== user));
+      if (res.error) {
+        // Если ошибка (например, участник не найден на бэке), 
+        // участник уже удален на фронте, просто показываем сообщение
+        toast.warning("Участник удален из списка, но не найден на сервере");
+        return;
+      }
       toast.success("Успешно удалено");
+    }).catch((error) => {
+      // При ошибке участник уже удален на фронте
+      toast.warning("Участник удален из списка, но произошла ошибка при удалении на сервере");
     });
 
     toast.promise(promise, {
@@ -610,8 +622,9 @@ function AnswerLetterV4({
                 if (!resp.hasOwnProperty("error")) {
                   setSignAnswerModal(false);
                   toast.success("Успешно подписан");
-                  refetchData();
                 }
+                // Вызываем refetch в любом случае после подписания
+                refetchData();
               });
             }}
             sx={{ minWidth: 136 }}

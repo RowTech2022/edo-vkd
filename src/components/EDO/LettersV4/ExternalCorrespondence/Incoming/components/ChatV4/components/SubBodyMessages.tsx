@@ -83,6 +83,12 @@ const SubBodyMessages = ({
   }, [chatInfo, isActiveSubTabVisa, conclusionFinished, isSendToParentSuccess]);
 
   useEffect(() => {
+    if (isSendToParentSuccess && refetchData) {
+      refetchData();
+    }
+  }, [isSendToParentSuccess, refetchData]);
+
+  useEffect(() => {
     if (isSendToParentError && sendToParentError) {
       const err = sendToParentError as {
         data?: { Message?: string };

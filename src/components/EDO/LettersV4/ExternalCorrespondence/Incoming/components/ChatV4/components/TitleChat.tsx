@@ -32,7 +32,7 @@ const TitleChat = ({
   userChats: any;
 }) => {
   const chatInputRef = useRef(null);
-  const { letterId } = useContext(IncomingCreateV4Context);
+  const { letterId, refetchData } = useContext(IncomingCreateV4Context);
 
   const [mergerId, setMergerId] = useState(0);
 
@@ -155,6 +155,12 @@ const TitleChat = ({
       });
     }
   }, [currentChatUser, isSendToParentSuccess]);
+
+  useEffect(() => {
+    if (isSendToParentSuccess && refetchData) {
+      refetchData();
+    }
+  }, [isSendToParentSuccess, refetchData]);
 
   useEffect(() => {
     setSelectedUserChat(

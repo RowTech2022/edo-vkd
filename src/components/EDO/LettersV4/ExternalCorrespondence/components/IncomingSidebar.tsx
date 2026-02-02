@@ -107,11 +107,14 @@ export const IncomingSidebar: FC<IProps> = ({
   };
 
   const isActiveTab = (key: LettersV4IncommingTab) => {
+    // Для FOLDERS сравниваем как строку
+    if (key === LettersV4IncommingTab.FOLDERS) {
+      return params.tab === LettersV4IncommingTab.FOLDERS;
+    }
+    
+    // Для остальных сравниваем как число
     const activeTab = Number(params.tab);
-    if (params.tab === LettersV4IncommingTab.FOLDERS && params.tab === key)
-      return true;
-
-    return activeTab === key && isActive(AppRoutes.LETTERS_V4_INCOMING);
+    return activeTab === key && (isActive(AppRoutes.LETTERS_V4_INCOMING) || isActive(AppRoutes.LETTERS_V4_OUTCOMING));
   };
 
   // console.log("MenuItems: ", menuItems);
@@ -202,15 +205,53 @@ export const IncomingSidebar: FC<IProps> = ({
                 <div key={index + 1}>
                   <div
                     onClick={() => {
-                      navigate(AppRoutes.LETTERS_V4_INCOMING);
-                      setParams({
-                        tab: key,
-                        recordId: "",
-                        folderType:
-                          key === LettersV4IncommingTab.FOLDERS
-                            ? "incomming"
-                            : "",
-                      });
+                      // Для папок, корзины, архива и закреплённых открываем подменю
+                      if (
+                        key === LettersV4IncommingTab.FOLDERS ||
+                        key === LettersV4IncommingTab.CART ||
+                        key === LettersV4IncommingTab.ARCHIVE ||
+                        key === LettersV4IncommingTab.PINNED
+                      ) {
+                        // Проверяем, открыто ли подменю (сравниваем с учетом типов)
+                        const isOpen = (() => {
+                          if (key === LettersV4IncommingTab.FOLDERS) {
+                            return params.tab === LettersV4IncommingTab.FOLDERS;
+                          }
+                          return Number(params.tab) === key;
+                        })();
+                        
+                        if (isOpen) {
+                          // Если уже открыто, закрываем подменю
+                          setParams({
+                            tab: "",
+                            recordId: "",
+                            folderType: "",
+                            cartType: "",
+                            archiveType: "",
+                            pinnedType: "",
+                          });
+                        } else {
+                          // Открываем подменю, но НЕ устанавливаем тип (чтобы не отправлять запрос)
+                          // Запрос будет отправлен только при выборе "Входящие" или "Исходящие"
+                          setParams({
+                            tab: key, // key уже правильного типа (число или строка)
+                            recordId: "",
+                            // НЕ устанавливаем folderType, cartType, archiveType, pinnedType
+                            // чтобы не вызывать обновление фильтров и отправку запроса
+                          });
+                        }
+                      } else {
+                        // Для других вкладок навигируем как обычно
+                        navigate(AppRoutes.LETTERS_V4_INCOMING);
+                        setParams({
+                          tab: key,
+                          recordId: "",
+                          folderType: "",
+                          cartType: "",
+                          archiveType: "",
+                          pinnedType: "",
+                        });
+                      }
                     }}
                     key={key}
                     className={clsx(
@@ -225,30 +266,80 @@ export const IncomingSidebar: FC<IProps> = ({
                       {title}
                     </span>
                   </div>
-                  {key === LettersV4IncommingTab.FOLDERS && (
+                  {(key === LettersV4IncommingTab.FOLDERS ||
+                    key === LettersV4IncommingTab.CART ||
+                    key === LettersV4IncommingTab.ARCHIVE ||
+                    key === LettersV4IncommingTab.PINNED) && (
                     <div
                       className={clsx(
                         "tw-rounded-tr-lg tw-rounded-br-lg tw-w-full tw-bg-light-blue tw-transition-all tw-duration-500 tw-ease-in",
-                        key === params.tab && !params.minified
+                        (() => {
+                          // Для FOLDERS сравниваем как строку
+                          if (key === LettersV4IncommingTab.FOLDERS) {
+                            return params.tab === LettersV4IncommingTab.FOLDERS && !params.minified;
+                          }
+                          // Для остальных сравниваем как число
+                          return Number(params.tab) === key && !params.minified;
+                        })()
                           ? "tw-max-h-[120rem] tw-opacity-100"
                           : "tw-max-h-0 tw-opacity-0 tw-pointer-events-none"
                       )}
                     >
                       {menuItems.map(({ path, label, icon, id, active }) => {
-                        // console.log("Id: ", id);
+                        const isIncoming = id === "incomming";
+                        const isOutcoming = id === "outcomming";
+                        
+                        // Определяем тип для разных вкладок
+                        let typeParam = "";
+                        if (key === LettersV4IncommingTab.FOLDERS) {
+                          typeParam = "folderType";
+                        } else if (key === LettersV4IncommingTab.CART) {
+                          typeParam = "cartType";
+                        } else if (key === LettersV4IncommingTab.ARCHIVE) {
+                          typeParam = "archiveType";
+                        } else if (key === LettersV4IncommingTab.PINNED) {
+                          typeParam = "pinnedType";
+                        }
+                        
+                        // Определяем текст для подменю
+                        let subMenuText = "";
+                        if (key === LettersV4IncommingTab.FOLDERS) {
+                          subMenuText = `${label.slice(0, label.indexOf(" "))} папки`;
+                        } else if (key === LettersV4IncommingTab.CART) {
+                          subMenuText = `${label.slice(0, label.indexOf(" "))} корзина`;
+                        } else if (key === LettersV4IncommingTab.ARCHIVE) {
+                          subMenuText = `${label.slice(0, label.indexOf(" "))} архив`;
+                        } else if (key === LettersV4IncommingTab.PINNED) {
+                          subMenuText = `${label.slice(0, label.indexOf(" "))} закреплённый`;
+                        }
+                        
                         return (
                           <div
                             key={path}
                             onClick={() => {
-                              setParams({
-                                folderType: id,
-                              });
+                              // Устанавливаем параметры для фильтрации
+                              const newParams: any = {
+                                [typeParam]: id, // id будет "incomming" или "outcomming"
+                                tab: key,
+                                recordId: "",
+                              };
+                              
+                              // Очищаем другие типы параметров
+                              if (typeParam !== "folderType") newParams.folderType = "";
+                              if (typeParam !== "cartType") newParams.cartType = "";
+                              if (typeParam !== "archiveType") newParams.archiveType = "";
+                              if (typeParam !== "pinnedType") newParams.pinnedType = "";
+                              
+                              setParams(newParams);
+                              
+                              // НЕ навигируем - показываем данные здесь же с фильтром
+                              // Реестр будет условно рендериться в LettersV4Layout
                             }}
                             className={clsx(
                               "tw-py-3 tw-px-3 tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-whitespace-nowrap",
                               {
                                 "lettersV4-gradient  tw-border-l-2 tw-border-light-green":
-                                  params.folderType === id || active,
+                                  params[typeParam] === id || active,
                               }
                             )}
                           >
@@ -258,7 +349,7 @@ export const IncomingSidebar: FC<IProps> = ({
                                 "tw-opacity-0": params.minified,
                               })}
                             >
-                              {label.slice(0, label.indexOf(" "))} папки
+                              {subMenuText}
                             </span>
                           </div>
                         );

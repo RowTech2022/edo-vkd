@@ -86,13 +86,46 @@ export default function StateIndicatorBase({
             <span
               className={classNames(
                 "tw-h-2",
-                state.id + 1 < activeState || state.id === endStatus
-                  ? "tw-bg-green-600"
-                  : state.id === activeState
-                  ? "tw-bg-gradient-to-r tw-from-[#FA8C15] tw-to-primary"
-                  : state.id === activeState - 1
-                  ? "tw-bg-gradient-to-l tw-from-[#FA8C15] tw-to-green-600"
-                  : "tw-bg-primary"
+                (() => {
+                  // Если это последний элемент, не показываем линию
+                  if (lastElm?.id === state?.id) {
+                    return "tw-bg-transparent";
+                  }
+                  
+                  // Находим следующий статус в списке
+                  const currentIndex = filteredStates.findIndex(s => s.id === state.id);
+                  const nextState = filteredStates[currentIndex + 1];
+                  
+                  // Если статус завершен (меньше активного)
+                  const isStateCompleted = (activeState !== 100 && state.id < activeState) || 
+                                          activeState === endStatus || 
+                                          activeState === 9;
+                  
+                  // Если следующий статус - это активный статус, и текущий статус завершен
+                  // то линия должна быть оранжево-серым градиентом (переход от завершенного к активному)
+                  if (isStateCompleted && nextState?.id === activeState && activeState !== endStatus && activeState !== 9) {
+                    return "tw-bg-gradient-to-r tw-from-green-600 tw-to-[#FA8C15]";
+                  }
+                  
+                  // Если статус завершен и следующий статус тоже завершен - зеленая линия
+                  const isNextStateCompleted = nextState && (
+                    (activeState !== 100 && nextState.id < activeState) || 
+                    activeState === endStatus || 
+                    activeState === 9
+                  );
+                  
+                  if (isStateCompleted && isNextStateCompleted) {
+                    return "tw-bg-green-600";
+                  }
+                  
+                  // Если текущий статус - активный
+                  if (state.id === activeState) {
+                    return "tw-bg-gradient-to-r tw-from-[#FA8C15] tw-to-primary";
+                  }
+                  
+                  // Остальные случаи - серая линия
+                  return "tw-bg-primary";
+                })()
               )}
             ></span>
           </div>

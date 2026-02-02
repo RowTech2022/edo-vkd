@@ -6,6 +6,9 @@ export default {
   root: "__next",
   theme: {
     extend: {
+      screens: {
+        "2xl": "1780px",
+      },
       colors: {
         primary: "#607D8B",
         secondary: "#009688",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Autocomplete, Button, Chip, TextField, Tooltip } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { GridColDef } from "@mui/x-data-grid";
@@ -21,6 +21,7 @@ import {
 import { IncomingFolder } from "@services/lettersNewApi";
 import { useFetchContragentQuery } from "@services/generalApi";
 import ModalForm from "./folders/modal";
+import { FolderCard } from "../components/FolderCard";
 
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -32,6 +33,7 @@ import {
 import { useParams } from "react-router";
 import { useDynamicSearchParams, usePagination } from "@hooks";
 import { LettersV4Layout } from "../components/LettersV4Layout";
+import { LettersV4IncommingTab } from "../components/IncomingTabs";
 import OutcomingCreateV4 from "./create";
 import {
   IOutcomingSearchItemLettersV4,
@@ -116,6 +118,7 @@ const columns: GridColDef[] = [
 
 type Props = {
   isIncoming?: boolean;
+  skipLayout?: boolean; // Проп для рендеринга без Layout (когда Layout уже есть выше)
 };
 
 const LettersV4NewOutcomingRegistry = (props: Props) => {
@@ -126,7 +129,8 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
 
   const param = searchParams.folderId;
   const viewType = Number(searchParams.tab || "") || undefined;
-  const folderId = param ? Number(param) : 0;
+  // Если folderId не указан в URL или равен 0, используем -6 (дефолтная первая папка)
+  const folderId = param && param !== "0" ? Number(param) : -6;
 
   const pagination = usePagination();
 
@@ -147,15 +151,30 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
   const [totalItems, setTotalItems] = useState<number>(0);
   const [items, setItems] = useState<IOutcomingSearchItemLettersV4[]>();
   const [folderInfo, setFolderInfo] = useState<IncomingFolder[] | undefined>(
-    []
+    [],
   );
 
+  const prevFiltersRef = useRef<Nullable<IOutcomingV3RequestSearch>>(null);
+  const prevPageRef = useRef<number>(0);
+
+  // Проверяем, выбран ли тип для корзины/архива/закреплённого при инициализации
+  const initialCartType = searchParams.cartType;
+  const initialArchiveType = searchParams.archiveType;
+  const initialPinnedType = searchParams.pinnedType;
+  const initialIsCartArchivePinned = 
+    viewType === LettersV4IncommingTab.CART ||
+    viewType === LettersV4IncommingTab.ARCHIVE ||
+    viewType === LettersV4IncommingTab.PINNED;
+  const initialHasTypeSelected = initialCartType || initialArchiveType || initialPinnedType;
+  
   const [filters, setFilters] = useState<Nullable<IOutcomingV3RequestSearch>>({
-    folderId: null,
+    folderId: -6, // Дефолтная первая папка
     outcomeNumber: null,
     state: null,
     receivedDate: null,
     contragent: null,
+    // Устанавливаем viewType только если тип выбран или это не корзина/архив/закреплённый
+    viewType: (initialIsCartArchivePinned && !initialHasTypeSelected) ? undefined : viewType,
   });
 
   const contragents = useFetchContragentQuery({});
@@ -180,6 +199,7 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
       filters: {},
       ...args,
     });
+    console.log("Outcoming folderInfo:", data?.folderInfo);
     setItems(data?.items);
     setFolderInfo(data?.folderInfo);
     setTotalItems(data?.total || 0);
@@ -206,12 +226,73 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
     });
   };
 
+  // Отправка запросов - объединяем логику в один useEffect
   useEffect(() => {
-    fetchData({
-      pageInfo: { pageNumber: page + 1, pageSize },
-      filters: filters,
+    // Проверяем, выбран ли тип "outcomming" (этот компонент должен использоваться только для исходящих)
+    const cartType = searchParams.cartType;
+    const archiveType = searchParams.archiveType;
+    const pinnedType = searchParams.pinnedType;
+    
+    const isOutcomingType = 
+      cartType === "outcomming" || 
+      archiveType === "outcomming" || 
+      pinnedType === "outcomming";
+    
+    const isCartArchivePinned = 
+      viewType === LettersV4IncommingTab.CART ||
+      viewType === LettersV4IncommingTab.ARCHIVE ||
+      viewType === LettersV4IncommingTab.PINNED;
+    
+    console.log("Outcoming useEffect:", {
+      cartType,
+      archiveType,
+      pinnedType,
+      isOutcomingType,
+      isCartArchivePinned,
+      viewType,
+      filters,
     });
-  }, [page, pageSize, filters]);
+    
+    // Если это корзина/архив/закреплённый и выбран "incomming", не отправляем запрос
+    if (isCartArchivePinned && (cartType === "incomming" || archiveType === "incomming" || pinnedType === "incomming")) {
+      console.log("Outcoming: Skipping request - incomming type selected");
+      prevFiltersRef.current = filters;
+      prevPageRef.current = page;
+      return; // Не отправляем запрос, если выбран входящий тип
+    }
+    
+    // Если это корзина/архив/закреплённый и тип не выбран, не отправляем запрос
+    if (isCartArchivePinned && !cartType && !archiveType && !pinnedType) {
+      console.log("Outcoming: Skipping request - no type selected");
+      prevFiltersRef.current = filters;
+      prevPageRef.current = page;
+      return; // Не отправляем запрос, если тип не выбран
+    }
+    
+    // Проверяем, изменились ли фильтры или страница
+    // Если prevFiltersRef.current === null, это первая загрузка, отправляем запрос
+    const isFirstLoad = prevFiltersRef.current === null;
+    const filtersChanged = !isFirstLoad && JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters);
+    const pageChanged = prevPageRef.current !== page;
+    
+    console.log("Outcoming: Request check:", {
+      isFirstLoad,
+      filtersChanged,
+      pageChanged,
+      shouldSend: isFirstLoad || filtersChanged || pageChanged,
+    });
+    
+    // Отправляем запрос только если что-то изменилось или это первая загрузка
+    if (isFirstLoad || filtersChanged || pageChanged) {
+      console.log("Outcoming: Sending request with filters:", filters);
+      prevFiltersRef.current = filters;
+      prevPageRef.current = page;
+      fetchData({
+        pageInfo: { pageNumber: page + 1, pageSize },
+        filters: filters,
+      });
+    }
+  }, [page, pageSize, filters, searchParams.cartType, searchParams.archiveType, searchParams.pinnedType, viewType]);
 
   const handleMoveToFolder = (data: any) => {
     moveToFolder(data).then(() => {});
@@ -222,24 +303,51 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
   };
 
   useEffect(() => {
+    // Получаем параметры типа из searchParams
+    const cartType = searchParams.cartType;
+    const archiveType = searchParams.archiveType;
+    const pinnedType = searchParams.pinnedType;
+    
+    const isCartArchivePinned = 
+      viewType === LettersV4IncommingTab.CART ||
+      viewType === LettersV4IncommingTab.ARCHIVE ||
+      viewType === LettersV4IncommingTab.PINNED;
+    
+    // Если это корзина/архив/закреплённый и выбран "incomming", не обновляем фильтры
+    if (isCartArchivePinned && (cartType === "incomming" || archiveType === "incomming" || pinnedType === "incomming")) {
+      return; // Не обновляем фильтры, если выбран входящий тип
+    }
+    
+    // Если это корзина/архив/закреплённый и тип не выбран, не обновляем фильтры
+    if (isCartArchivePinned && !cartType && !archiveType && !pinnedType) {
+      return; // Не обновляем фильтры, если тип не выбран
+    }
+    
+    // Используем folderId из URL, если он есть и не равен 0, иначе -6 (дефолтная первая папка)
+    const finalFolderId = param && param !== "0" ? Number(param) : -6;
+    
+    // Обновляем фильтры только если выбран тип "outcomming" или это не корзина/архив/закреплённый
+    // viewType устанавливаем только если тип выбран
+    const finalViewType = (isCartArchivePinned && !cartType && !archiveType && !pinnedType) ? undefined : viewType;
+    
     setFilters({
       ...filters,
-      folderId: folderId > 0 ? folderId : null,
-      viewType,
+      folderId: finalFolderId,
+      viewType: finalViewType, // viewType для фильтрации по корзине, архиву, закреплённым
     });
     setParams((state) => ({
       ...state,
       filters: {
         ...state.filters,
-        folderId,
-        viewType,
+        folderId: finalFolderId,
+        viewType: finalViewType,
       },
       pageInfo: {
         pageNumber: 1,
         pageSize,
       },
     }));
-  }, [folderId, viewType]);
+  }, [param, viewType, searchParams.cartType, searchParams.archiveType, searchParams.pinnedType]);
 
   useEffect(() => {
     if (searchParams.recordId) {
@@ -281,9 +389,48 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
 
     return (
       <div>
-        <div className="tw-mb-4">
-          <div className="tw-flex tw-items-center tw-w-full tw-gap-4 tw-mb-4 tw-bg-white tw-rounded-[12px] tw-p-2 tw-px-4">
+        <div>
+          {folderInfo && folderInfo.length > 0 && (
+            <div className="tw-flex tw-overflow-x-auto tw-mb-4">
+              {folderInfo
+                ?.map((item) => ({
+                  ...item.folderInfo,
+                  active: item.active,
+                }))
+                ?.filter?.((el) => el.id !== null && el.id <= 0)
+                ?.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="tw-min-w-[200px] tw-grid tw-grid-cols-1"
+                  >
+                    <FolderCard
+                      data={item}
+                      refetchData={refetchData}
+                      exitVisible={false}
+                      isIncoming={false}
+                    />
+                  </div>
+                ))}
+            </div>
+          )}
+          <div className="tw-my-4">
+            <div className="tw-flex tw-items-center tw-w-full tw-gap-4 tw-mb-4 tw-bg-white tw-rounded-[12px] tw-p-2 tw-px-4">
             <div className="tw-grid tw-grid-flow-col-dense tw-auto-cols-[170px] tw-gap-4">
+              <TextField
+                sx={{
+                  "& .MuiInputBase-root": { borderRadius: "8px !important" },
+                }}
+                label="Входящий номер"
+                size="small"
+                name="incomeNumber"
+                onChange={(event) => {
+                  setFilters({
+                    ...filters,
+                    incomeNumber: event.target.value,
+                  } as any);
+                  setDynamicSearchParams("incomeNumber", event.target.value);
+                }}
+              />
               <TextField
                 sx={{
                   "& .MuiInputBase-root": { borderRadius: "8px !important" },
@@ -300,22 +447,6 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
                   setDynamicSearchParams("outcomeNumber", event.target.value);
                 }}
               />
-              <TextField
-                sx={{
-                  "& .MuiInputBase-root": { borderRadius: "8px !important" },
-                }}
-                label="Входящий номер"
-                size="small"
-                name="incomeNumber"
-                onChange={(event) => {
-                  setFilters({
-                    ...filters,
-                    incomeNumber: event.target.value,
-                  } as any);
-                  setDynamicSearchParams("incomeNumber", event.target.value);
-                }}
-              />
-
               <DatePicker
                 label="Дата отправки"
                 inputFormat={newDateFormat}
@@ -460,6 +591,7 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
             totalItems={totalItems}
             {...pagination}
           />
+          </div>
         </div>
         <ModalForm
           open={open}
@@ -469,6 +601,12 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
       </div>
     );
   };
+
+  const content = renderContent();
+
+  if (props.skipLayout) {
+    return <DndProvider backend={HTML5Backend}>{content}</DndProvider>;
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -482,7 +620,7 @@ const LettersV4NewOutcomingRegistry = (props: Props) => {
           })) ?? []
         }
       >
-        {renderContent()}
+        {content}
       </LettersV4Layout>
     </DndProvider>
   );

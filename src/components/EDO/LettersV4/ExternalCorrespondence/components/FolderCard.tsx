@@ -12,7 +12,6 @@ import Badge from "@mui/material/Badge";
 import { IconButton, Tooltip } from "@mui/material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import "./folderCard.css";
-import { toast } from "node_modules/react-toastify/dist";
 
 interface IProps {
   data: IFolderItem;
@@ -59,7 +58,7 @@ export const FolderCard: FC<IProps> = ({
     e.stopPropagation();
 
     const promise = exitFolder({ id: Number(data.id)! }).then(() =>
-      refetchData?.()
+      refetchData?.(),
     );
 
     toastPromise(promise, {
@@ -92,7 +91,7 @@ export const FolderCard: FC<IProps> = ({
         ref={drop}
         className={clsx(
           "card  tw-rounded-lg tw-p-3 tw-pb-5 tw-mb-3 tw-w-full tw-relative",
-          isActive ? "tw-bg-dark-blue tw-text-white" : "tw-bg-lighter-blue"
+          isActive ? "tw-bg-dark-blue tw-text-white" : "tw-bg-lighter-blue",
         )}
         onClick={() =>
           setParams({

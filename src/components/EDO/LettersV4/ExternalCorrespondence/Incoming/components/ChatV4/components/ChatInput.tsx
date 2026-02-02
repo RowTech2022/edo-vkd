@@ -45,10 +45,11 @@ export const normalizeValue = (value: string) => {
   });
 };
 
-export const normalizeValue2 = (value: any) => {
-  const safeValue = typeof value === "string" ? value : "";
-
-  return safeValue.replaceAll(JSON_REGEXP, (match) => {
+export const normalizeValue2 = (value: string | null | undefined) => {
+  if (!value || typeof value !== 'string') {
+    return '';
+  }
+  return value.replaceAll(JSON_REGEXP, (match, user) => {
     try {
       const userObj = JSON.parse(match.slice(1));
       return `<span class="text-blue">${userObj.value}</span> `;
@@ -57,9 +58,6 @@ export const normalizeValue2 = (value: any) => {
     }
   });
 };
-
-
-
 
 export const normalizeBeforeSending = (
   value: string,

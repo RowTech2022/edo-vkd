@@ -358,7 +358,7 @@ export const lettersApiV4 = api.injectEndpoints({
         };
       },
     }),
-    fetchLettersV4ById: builder.query<IncomingLettersV4MainDTO, number>({
+    fetchLettersV4ById: builder.query<IncomingLettersV4MainDTO, string | number>({
       query: (id) => ({ url: `/api/IncomingV4/get/${id}` }),
       // providesTags: ['IncomingNew'],
     }),
@@ -366,7 +366,7 @@ export const lettersApiV4 = api.injectEndpoints({
       query: (id) => ({ url: `/api/OutComingV4/get/${id}` }),
       // providesTags: ['IncomingNew'],
     }),
-    fetchLettersV4ById2: builder.query<IncomingLettersV4MainDTO, number>({
+    fetchLettersV4ById2: builder.query<IncomingLettersV4MainDTO, string | number>({
       query: (id) => ({ url: `/api/IncomingV4/get/${id}` }),
       // providesTags: ['IncomingNew'],
     }),
@@ -1010,7 +1010,7 @@ export const lettersApiV4 = api.injectEndpoints({
         data,
       }),
     }),
-    getAnswerById: builder.query<any, number>({
+    getAnswerById: builder.query<any, string | number>({
       query: (id) => ({
         url: `api/incomingV4/answer/${id}`,
         method: "GET",
@@ -1078,6 +1078,14 @@ export const lettersApiV4 = api.injectEndpoints({
         data,
       }),
     }),
+
+    doneLetterV4Outcoming: builder.mutation<any, any>({
+      query: (data) => ({
+        url: "api/outComingV4/answer/doneLetter",
+        method: "POST",
+        data,
+      }),
+    }),
     organisationMyBlanks: builder.mutation<OrgBlanksResponse, {}>({
       query: () => ({
         url: "api/crm/organisation/myBlanks",
@@ -1108,6 +1116,12 @@ export const lettersApiV4 = api.injectEndpoints({
     getAnswerDataForSignIncoming: builder.query<any, number>({
       query: (id) => ({
         url: `api/incomingV4/answer/addSignToDoc/${id}`,
+      }),
+    }),
+
+    getQrCodeForIncoming: builder.query<string[], number>({
+      query: (id) => ({
+        url: `api/IncomingV4Answer/getDataForSign/${id}`,
       }),
     }),
 
@@ -1217,12 +1231,14 @@ export const {
   useDeleteConclusionMutation,
   useSendToApproveLetterV4Mutation,
   useDoneLetterV4Mutation,
+  useDoneLetterV4OutcomingMutation,
   useOrganisationMyBlanksMutation,
   useAnswerMyBlanksMutation,
   useLazyGetAnswerDataForSignQuery,
   useChangeVisaTypesMutation,
   useAnswerMyBlanksIncomingMutation,
   useLazyGetAnswerDataForSignIncomingQuery,
+  useLazyGetQrCodeForIncomingQuery,
   useAnswerOutcomingSetNumberMutation,
   useAnswerIncomingCheckFinalPdfMutation,
   useUpdateAnswerLetterV4Mutation,
